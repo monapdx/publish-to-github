@@ -1,5 +1,7 @@
 # Blog Editor
 
+<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/editor.png">
+
 A small, browser-only app for drafting HTML posts and publishing **standalone HTML pages** to a GitHub repository via the [Contents API](https://docs.github.com/en/rest/repos/contents). Think of it as a personal utility: write in a rich editor or raw HTML, keep drafts locally, and push files into a folder you choose (for example `blog/`).
 
 ## Features
