@@ -37,6 +37,37 @@ npm install
 npm run dev
 ```
 
+## GitHub Pages demo
+
+The app is a static SPA. On **project** pages the site URL includes the repo name (`https://<user>.github.io/<repo>/`), so the production build must set Vite’s [`base`](https://vite.dev/config/shared-options.html#base) to that path (this repo reads **`VITE_BASE`** at build time).
+
+### Option A — GitHub Actions (recommended)
+
+1. Push this repo (including `.github/workflows/github-pages.yml`) to GitHub.
+2. **Settings → Pages**: under **Build and deployment**, set **Source** to **GitHub Actions** (not “Deploy from a branch”).
+3. Push to `main` or `master`, or run the workflow manually (**Actions → Deploy to GitHub Pages → Run workflow**).
+4. After it finishes, open the URL shown on the run (for a normal repo it is `https://<owner>.github.io/<repo>/`).
+
+The workflow sets `VITE_BASE` to `/` when the repository is the special **`<user>.github.io`** user-site repo; otherwise it uses `/<repo>/`.
+
+### Option B — Manual build
+
+From the repo root, use the same path your site will use (leading and trailing slashes as shown):
+
+```bash
+# Example: repo named publish-to-github → site is https://you.github.io/publish-to-github/
+VITE_BASE=/publish-to-github/ npm run build
+```
+
+Upload the contents of **`dist/`** to your Pages branch or hosting bucket. On Windows PowerShell:
+
+```powershell
+$env:VITE_BASE = "/publish-to-github/"
+npm run build
+```
+
+For a **user or organization** site served from the root of `https://username.github.io/`, omit `VITE_BASE` (defaults to `/`).
+
 ## GitHub token
 
 Use a fine-grained or classic PAT that can **read** repository contents (to list and open published posts) and **write** contents (to publish). Prefer a fine-grained token scoped to the repo you use. The token is stored in the browser (`localStorage`) after a successful publish, along with the rest of the publish form.
