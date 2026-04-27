@@ -21,6 +21,8 @@ npm run dev
 
 Create a **[fine-grained](https://github.com/settings/personal-access-tokens)** or classic PAT with permission to write repository contents. The token is kept in the browser (`localStorage`) after a successful publish.
 
+Fine-grained tokens **--->** Generate new token **--->** Token name **--->** Expiration **--->** No expiration **--->** Repository access **--->** Only select repositories **--->** Select repositories **--->** Permissions **--->** Add permissions **--->** Contents **--->** Access **--->** Read and write **--->** Generate token
+
 ## Scripts
 
 - `npm run dev` — local dev server
