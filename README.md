@@ -19,7 +19,7 @@ npm run dev
 
 ## GitHub token
 
-Create a fine-grained or classic PAT with permission to write repository contents. The token is kept in the browser (`localStorage`) after a successful publish.
+Create a **[fine-grained](https://github.com/settings/personal-access-tokens)** or classic PAT with permission to write repository contents. The token is kept in the browser (`localStorage`) after a successful publish.
 
 ## Scripts
 
