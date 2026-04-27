@@ -1,5 +1,34 @@
-export function EditorToolbar({ editor, onImage, onSource }) {
+import { useEditorState } from '@tiptap/react'
+
+function parseTableSizeInput(raw) {
+  if (raw == null || typeof raw !== 'string') return { rows: 3, cols: 3 }
+  const normalized = raw.toLowerCase().replace(/×/g, 'x').replace(/\s+/g, '')
+  const parts = normalized
+    .split(/[x,]/)
+    .map((s) => parseInt(s, 10))
+    .filter((n) => !Number.isNaN(n))
+  const rows = Math.min(20, Math.max(1, parts[0] || 3))
+  const cols = Math.min(12, Math.max(1, parts[1] ?? parts[0] ?? 3))
+  return { rows, cols }
+}
+
+export function EditorToolbar({ editor, onImage, onCodeSnippet, onSource }) {
+  useEditorState({
+    editor,
+    selector: ({ transactionNumber }) => transactionNumber,
+  })
+
   if (!editor) return null
+
+  function insertTable() {
+    const raw = window.prompt(
+      'Table size: rows and columns (e.g. 3x3 or 4,2). First row will be a header.',
+      '3x3',
+    )
+    if (raw === null) return
+    const { rows, cols } = parseTableSizeInput(raw)
+    editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run()
+  }
 
   function setLink() {
     const prev = editor.getAttributes('link').href
@@ -11,6 +40,8 @@ export function EditorToolbar({ editor, onImage, onSource }) {
     }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
   }
+
+  const inTable = editor.isActive('table')
 
   return (
     <div className="editor-toolbar" role="toolbar" aria-label="Formatting">
@@ -95,6 +126,75 @@ export function EditorToolbar({ editor, onImage, onSource }) {
       </button>
       <button type="button" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
         HR
+      </button>
+      <button
+        type="button"
+        className={editor.isActive('codeBlock') ? 'is-active' : ''}
+        onClick={onCodeSnippet}
+        title="Insert fenced code snippet (shown with ``` in the editor)"
+        aria-pressed={editor.isActive('codeBlock')}
+      >
+        Snippet
+      </button>
+      <span className="toolbar-sep" aria-hidden />
+      <button type="button" onClick={insertTable} title="Insert HTML table">
+        Table
+      </button>
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().addColumnBefore().run()}
+        disabled={!inTable || !editor.can().chain().focus().addColumnBefore().run()}
+        title="Add column before"
+      >
+        +Col ←
+      </button>
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().addColumnAfter().run()}
+        disabled={!inTable || !editor.can().chain().focus().addColumnAfter().run()}
+        title="Add column after"
+      >
+        +Col →
+      </button>
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().deleteColumn().run()}
+        disabled={!inTable || !editor.can().chain().focus().deleteColumn().run()}
+        title="Delete column"
+      >
+        −Col
+      </button>
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().addRowBefore().run()}
+        disabled={!inTable || !editor.can().chain().focus().addRowBefore().run()}
+        title="Add row above"
+      >
+        +Row ↑
+      </button>
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().addRowAfter().run()}
+        disabled={!inTable || !editor.can().chain().focus().addRowAfter().run()}
+        title="Add row below"
+      >
+        +Row ↓
+      </button>
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().deleteRow().run()}
+        disabled={!inTable || !editor.can().chain().focus().deleteRow().run()}
+        title="Delete row"
+      >
+        −Row
+      </button>
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().deleteTable().run()}
+        disabled={!inTable || !editor.can().chain().focus().deleteTable().run()}
+        title="Remove table"
+      >
+        Remove table
       </button>
       <span className="toolbar-sep" aria-hidden />
       <button type="button" onClick={setLink}>

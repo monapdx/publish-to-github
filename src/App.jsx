@@ -8,8 +8,8 @@ import { PublishDialog } from './components/PublishDialog'
 import { loadGithubSettings, persistGithubSettings } from './lib/githubSettings'
 import { saveDraft, loadDrafts, loadDraft, deleteDraft } from './lib/drafts'
 import { slugify } from './lib/slugify'
-import { serializePost } from './lib/postSerializer'
-import { getFileSha, upsertFile } from './lib/github'
+import { parsePublishedHtml, serializePost } from './lib/postSerializer'
+import { fetchRepoFileText, getFileSha, listPostHtmlFiles, upsertFile } from './lib/github'
 
 const EMPTY_DOC = '<p></p>'
 
@@ -42,6 +42,11 @@ export default function App() {
   const [updatedAt, setUpdatedAt] = useState('')
   const [githubSettings, setGithubSettings] = useState(() => loadGithubSettings())
   const [drafts, setDrafts] = useState(() => loadDrafts())
+  const [listTab, setListTab] = useState('drafts')
+  const [publishedFiles, setPublishedFiles] = useState([])
+  const [publishedLoading, setPublishedLoading] = useState(false)
+  const [publishedError, setPublishedError] = useState('')
+  const [publishedSource, setPublishedSource] = useState(null)
   const [publishOpen, setPublishOpen] = useState(false)
   const [publishDialogKey, setPublishDialogKey] = useState(0)
   const [toasts, setToasts] = useState([])
@@ -71,6 +76,47 @@ export default function App() {
     setDrafts(loadDrafts())
   }, [])
 
+  const githubReady = Boolean(
+    githubSettings.token?.trim() && githubSettings.owner?.trim() && githubSettings.repo?.trim(),
+  )
+
+  const loadPublishedList = useCallback(async () => {
+    const token = githubSettings.token?.trim()
+    const owner = githubSettings.owner?.trim()
+    const repo = githubSettings.repo?.trim()
+    if (!token || !owner || !repo) {
+      setPublishedFiles([])
+      setPublishedLoading(false)
+      setPublishedError('')
+      return
+    }
+    setPublishedLoading(true)
+    setPublishedError('')
+    try {
+      const files = await listPostHtmlFiles({
+        token,
+        owner,
+        repo,
+        branch: githubSettings.branch?.trim() || 'main',
+        postsPath: githubSettings.postsPath,
+      })
+      setPublishedFiles([...files].sort((a, b) => a.name.localeCompare(b.name)))
+    } catch (err) {
+      setPublishedError(err?.message || 'Could not load published posts')
+      setPublishedFiles([])
+    } finally {
+      setPublishedLoading(false)
+    }
+  }, [githubSettings])
+
+  useEffect(() => {
+    if (listTab !== 'published') return undefined
+    const t = window.setTimeout(() => {
+      loadPublishedList()
+    }, 0)
+    return () => window.clearTimeout(t)
+  }, [listTab, loadPublishedList])
+
   const onTitleChange = useCallback(
     (value) => {
       setTitle(value)
@@ -95,6 +141,7 @@ export default function App() {
   }, [])
 
   const handleSaveDraft = useCallback(() => {
+    setPublishedSource(null)
     const row = saveDraft({
       id: draftId ?? undefined,
       title,
@@ -155,6 +202,7 @@ export default function App() {
     (id) => {
       const d = loadDraft(id)
       if (!d) return
+      setPublishedSource(null)
       setDraftId(d.id)
       setTitle(d.title ?? '')
       setSlug(d.slug ?? '')
@@ -176,6 +224,7 @@ export default function App() {
   )
 
   const handleNewDraft = useCallback(() => {
+    setPublishedSource(null)
     setDraftId(null)
     setTitle('')
     setSlug('')
@@ -193,6 +242,44 @@ export default function App() {
     }
   }, [])
 
+  const handleOpenPublished = useCallback(
+    async (path) => {
+      const token = githubSettings.token?.trim()
+      const owner = githubSettings.owner?.trim()
+      const repo = githubSettings.repo?.trim()
+      const branch = githubSettings.branch?.trim() || 'main'
+      if (!token || !owner || !repo) return
+      try {
+        const { text } = await fetchRepoFileText({ token, owner, repo, path, branch })
+        const { title: parsedTitle, excerpt: parsedExcerpt, content: parsedContent } =
+          parsePublishedHtml(text)
+        const basename = path.split('/').pop() || 'post'
+        const slugFromFile = basename.replace(/\.html$/i, '') || 'post'
+        const body =
+          parsedContent && parsedContent.trim() ? parsedContent : EMPTY_DOC
+        setPublishedSource({ path })
+        setDraftId(null)
+        setSlugManual(true)
+        setTitle(parsedTitle)
+        setSlug(slugFromFile)
+        setContent(body)
+        setExcerpt(parsedExcerpt ?? '')
+        setUpdatedAt('')
+        setMode('visual')
+        lastSavedRef.current = {
+          id: null,
+          title: parsedTitle,
+          slug: slugFromFile,
+          content: body,
+          excerpt: parsedExcerpt ?? '',
+        }
+      } catch (err) {
+        pushToast(err?.message || 'Failed to load file from GitHub')
+      }
+    },
+    [githubSettings, pushToast],
+  )
+
   const handleDeleteDraft = useCallback(
     (id) => {
       deleteDraft(id)
@@ -202,6 +289,8 @@ export default function App() {
     [draftId, handleNewDraft, refreshDrafts],
   )
 
+  const editorDocumentKey = draftId ?? publishedSource?.path ?? 'new'
+
   const handlePublish = useCallback(
     async (form) => {
       const publishedDraftId = draftId
@@ -210,6 +299,7 @@ export default function App() {
       const html = serializePost({
         title: title.trim() || 'Untitled',
         content,
+        excerpt: excerpt.trim(),
         templateId: form.templateId,
       })
       const sha = await getFileSha({
@@ -237,8 +327,9 @@ export default function App() {
         handleNewDraft()
       }
       pushToast(`Published to ${path}`)
+      loadPublishedList().catch(() => {})
     },
-    [draftId, title, slug, content, pushToast, refreshDrafts, handleNewDraft],
+    [draftId, title, slug, content, excerpt, pushToast, refreshDrafts, handleNewDraft, loadPublishedList],
   )
 
   return (
@@ -254,11 +345,24 @@ export default function App() {
       />
       <div className="app-body">
         <DraftList
+          listTab={listTab}
+          onListTabChange={setListTab}
           drafts={drafts}
           currentDraftId={draftId}
-          onOpen={handleOpenDraft}
-          onDelete={handleDeleteDraft}
+          onOpenDraft={handleOpenDraft}
+          onDeleteDraft={handleDeleteDraft}
           onNew={handleNewDraft}
+          publishedFiles={publishedFiles}
+          publishedLoading={publishedLoading}
+          publishedError={publishedError}
+          currentPublishedPath={publishedSource?.path ?? null}
+          onOpenPublished={handleOpenPublished}
+          onRefreshPublished={loadPublishedList}
+          githubReady={githubReady}
+          onOpenPublishSettings={() => {
+            setPublishDialogKey((k) => k + 1)
+            setPublishOpen(true)
+          }}
         />
         <main className="app-main">
           <div className="post-meta">
@@ -286,11 +390,16 @@ export default function App() {
                 type="text"
                 value={excerpt}
                 onChange={(e) => setExcerpt(e.target.value)}
-                placeholder="Optional short summary (stored in draft only for now)"
+                placeholder="Optional short summary (saved in drafts and in published HTML meta)"
               />
             </label>
             <p className="post-meta__hint">
-              {draftId ? (
+              {publishedSource ? (
+                <>
+                  Published file <code>{publishedSource.path}</code> — use Save draft to keep a
+                  local copy.
+                </>
+              ) : draftId ? (
                 <>
                   Draft <code>{draftId}</code>
                   {updatedAt ? ` · Last saved ${new Date(updatedAt).toLocaleString()}` : null}
@@ -303,14 +412,15 @@ export default function App() {
           <section className="editor-section" aria-label="Post body">
             {mode === 'visual' ? (
               <BlogEditor
-                key={draftId ?? 'new'}
+                key={editorDocumentKey}
+                documentKey={editorDocumentKey}
                 content={content}
                 onChange={setContent}
                 onRequestSourceMode={() => setMode('code')}
               />
             ) : (
               <HtmlEditor
-                key={draftId ?? 'new'}
+                key={editorDocumentKey}
                 value={content}
                 onChange={setContent}
                 placeholder="Edit raw HTML…"
