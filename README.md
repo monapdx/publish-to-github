@@ -28,6 +28,8 @@ Publishes posts as **HTML files** to a **GitHub repository** via the [Contents A
 
 - **Code snippets:** insert a multiline snippet from a dialog; optional language label becomes a `language-*` class on `<code>`. In Visual mode the block is styled with decorative triple-backtick lines; exported HTML is a normal `<pre><code>` block.
 
+<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/insert-snippet.png">
+
 - **Images:** paste a URL or upload a file (embedded as a data URL in the draft). Alt text, width, height, and alignment classes (`blog-image align-*`) are supported.
 
 <img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/insert-image.png">
