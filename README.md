@@ -10,7 +10,7 @@ Publishes posts as **HTML files** to a **GitHub repository** via the [Contents A
 
 ### Toolbar
 
-<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/toolbar.png">
+<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/text-format-zoomed.gif">
 
 - **Visual mode:** [TipTap](https://tiptap.dev/) v3 (ProseMirror) with headings (H1–H3), paragraph, bold, italic, underline, bullet and ordered lists, blockquote, horizontal rule, links, and undo/redo. **Ctrl/Cmd+S** saves the current draft (same as **Save draft**).
 
@@ -33,6 +33,9 @@ Publishes posts as **HTML files** to a **GitHub repository** via the [Contents A
 - **Images:** paste a URL or upload a file (embedded as a data URL in the draft). Alt text, width, height, and alignment classes (`blog-image align-*`) are supported.
 
 <img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/insert-image.png">
+
+
+
 
 ### Sidebar
 
