@@ -9,6 +9,8 @@ export function EditorToolbar({ editor, onImage, onMedia, onCodeSnippet, onSourc
   const [tableOpen, setTableOpen] = useState(false)
   const [tableRows, setTableRows] = useState('3')
   const [tableCols, setTableCols] = useState('3')
+  const [linkOpen, setLinkOpen] = useState(false)
+  const [linkUrl, setLinkUrl] = useState('')
 
   if (!editor) return null
 
@@ -21,13 +23,19 @@ export function EditorToolbar({ editor, onImage, onMedia, onCodeSnippet, onSourc
 
   function setLink() {
     const prev = editor.getAttributes('link').href
-    const url = window.prompt('Link URL', prev || 'https://')
-    if (url === null) return
-    if (url === '') {
+    setLinkUrl(prev || 'https://')
+    setLinkOpen(true)
+  }
+
+  function applyLink() {
+    const url = linkUrl.trim()
+    if (!url) {
       editor.chain().focus().extendMarkRange('link').unsetLink().run()
+      setLinkOpen(false)
       return
     }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+    setLinkOpen(false)
   }
 
   const inTable = editor.isActive('table')
@@ -269,6 +277,51 @@ export function EditorToolbar({ editor, onImage, onMedia, onCodeSnippet, onSourc
               </button>
               <button type="button" className="btn btn--primary" onClick={insertTable}>
                 Insert
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {linkOpen ? (
+        <div className="dialog-backdrop" role="presentation" onMouseDown={() => setLinkOpen(false)}>
+          <div
+            className="dialog dialog--link"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="link-dialog-title"
+            onMouseDown={(ev) => ev.stopPropagation()}
+          >
+            <h2 id="link-dialog-title">Insert link</h2>
+            <p className="dialog-hint">
+              Add a URL to the selected text. Leave empty to remove the current link.
+            </p>
+            <label className="field">
+              <span>URL</span>
+              <input
+                type="text"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                placeholder="https://example.com"
+                autoFocus
+              />
+            </label>
+            <div className="dialog-actions">
+              <button type="button" className="btn btn--ghost" onClick={() => setLinkOpen(false)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => {
+                  setLinkUrl('')
+                  editor.chain().focus().extendMarkRange('link').unsetLink().run()
+                  setLinkOpen(false)
+                }}
+              >
+                Remove
+              </button>
+              <button type="button" className="btn btn--primary" onClick={applyLink}>
+                Apply
               </button>
             </div>
           </div>
