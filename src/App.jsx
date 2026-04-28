@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 import { HeaderBar } from './components/HeaderBar'
 import { ToastStack } from './components/ToastStack'
-import { BlogEditor } from './components/BlogEditor'
 import { HtmlEditor } from './components/HtmlEditor'
 import { DraftList } from './components/DraftList'
 import { PublishDialog } from './components/PublishDialog'
@@ -12,6 +11,9 @@ import { parsePublishedHtml, serializePost } from './lib/postSerializer'
 import { fetchRepoFileText, getFileSha, listPostHtmlFiles, upsertFile } from './lib/github'
 
 const EMPTY_DOC = '<p></p>'
+const BlogEditor = lazy(() =>
+  import('./components/BlogEditor').then((module) => ({ default: module.BlogEditor })),
+)
 
 function normalizePostsPath(p) {
   if (!p || typeof p !== 'string') return 'blog/'
@@ -411,13 +413,15 @@ export default function App() {
           </div>
           <section className="editor-section" aria-label="Post body">
             {mode === 'visual' ? (
-              <BlogEditor
-                key={editorDocumentKey}
-                documentKey={editorDocumentKey}
-                content={content}
-                onChange={setContent}
-                onRequestSourceMode={() => setMode('code')}
-              />
+              <Suspense fallback={<div className="editor-loading">Loading editor…</div>}>
+                <BlogEditor
+                  key={editorDocumentKey}
+                  documentKey={editorDocumentKey}
+                  content={content}
+                  onChange={setContent}
+                  onRequestSourceMode={() => setMode('code')}
+                />
+              </Suspense>
             ) : (
               <HtmlEditor
                 key={editorDocumentKey}
