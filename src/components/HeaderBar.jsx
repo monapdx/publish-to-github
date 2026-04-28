@@ -22,7 +22,7 @@ export function HeaderBar({ mode, onModeChange, onSaveDraft, onPublish }) {
             Code
           </button>
         </div>
-        <button type="button" className="btn btn--ghost" onClick={onSaveDraft}>
+        <button type="button" className="btn btn--ghost btn--sky" onClick={onSaveDraft}>
           Save draft
         </button>
         <button type="button" className="btn btn--primary" onClick={onPublish}>

@@ -1,33 +1,22 @@
 import { useEditorState } from '@tiptap/react'
+import { useState } from 'react'
 
-function parseTableSizeInput(raw) {
-  if (raw == null || typeof raw !== 'string') return { rows: 3, cols: 3 }
-  const normalized = raw.toLowerCase().replace(/×/g, 'x').replace(/\s+/g, '')
-  const parts = normalized
-    .split(/[x,]/)
-    .map((s) => parseInt(s, 10))
-    .filter((n) => !Number.isNaN(n))
-  const rows = Math.min(20, Math.max(1, parts[0] || 3))
-  const cols = Math.min(12, Math.max(1, parts[1] ?? parts[0] ?? 3))
-  return { rows, cols }
-}
-
-export function EditorToolbar({ editor, onImage, onCodeSnippet, onSource }) {
+export function EditorToolbar({ editor, onImage, onMedia, onCodeSnippet, onSource }) {
   useEditorState({
     editor,
     selector: ({ transactionNumber }) => transactionNumber,
   })
+  const [tableOpen, setTableOpen] = useState(false)
+  const [tableRows, setTableRows] = useState('3')
+  const [tableCols, setTableCols] = useState('3')
 
   if (!editor) return null
 
   function insertTable() {
-    const raw = window.prompt(
-      'Table size: rows and columns (e.g. 3x3 or 4,2). First row will be a header.',
-      '3x3',
-    )
-    if (raw === null) return
-    const { rows, cols } = parseTableSizeInput(raw)
+    const rows = Math.min(20, Math.max(1, parseInt(tableRows, 10) || 3))
+    const cols = Math.min(12, Math.max(1, parseInt(tableCols, 10) || 3))
     editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run()
+    setTableOpen(false)
   }
 
   function setLink() {
@@ -44,7 +33,8 @@ export function EditorToolbar({ editor, onImage, onCodeSnippet, onSource }) {
   const inTable = editor.isActive('table')
 
   return (
-    <div className="editor-toolbar" role="toolbar" aria-label="Formatting">
+    <>
+      <div className="editor-toolbar" role="toolbar" aria-label="Formatting">
       <button
         type="button"
         className={editor.isActive('bold') ? 'is-active' : ''}
@@ -137,71 +127,85 @@ export function EditorToolbar({ editor, onImage, onCodeSnippet, onSource }) {
         Snippet
       </button>
       <span className="toolbar-sep" aria-hidden />
-      <button type="button" onClick={insertTable} title="Insert HTML table">
+      <button type="button" onClick={() => setTableOpen(true)} title="Insert HTML table">
         Table
       </button>
-      <button
-        type="button"
-        onClick={() => editor.chain().focus().addColumnBefore().run()}
-        disabled={!inTable || !editor.can().chain().focus().addColumnBefore().run()}
-        title="Add column before"
-      >
-        +Col ←
-      </button>
-      <button
-        type="button"
-        onClick={() => editor.chain().focus().addColumnAfter().run()}
-        disabled={!inTable || !editor.can().chain().focus().addColumnAfter().run()}
-        title="Add column after"
-      >
-        +Col →
-      </button>
-      <button
-        type="button"
-        onClick={() => editor.chain().focus().deleteColumn().run()}
-        disabled={!inTable || !editor.can().chain().focus().deleteColumn().run()}
-        title="Delete column"
-      >
-        −Col
-      </button>
-      <button
-        type="button"
-        onClick={() => editor.chain().focus().addRowBefore().run()}
-        disabled={!inTable || !editor.can().chain().focus().addRowBefore().run()}
-        title="Add row above"
-      >
-        +Row ↑
-      </button>
-      <button
-        type="button"
-        onClick={() => editor.chain().focus().addRowAfter().run()}
-        disabled={!inTable || !editor.can().chain().focus().addRowAfter().run()}
-        title="Add row below"
-      >
-        +Row ↓
-      </button>
-      <button
-        type="button"
-        onClick={() => editor.chain().focus().deleteRow().run()}
-        disabled={!inTable || !editor.can().chain().focus().deleteRow().run()}
-        title="Delete row"
-      >
-        −Row
-      </button>
-      <button
-        type="button"
-        onClick={() => editor.chain().focus().deleteTable().run()}
-        disabled={!inTable || !editor.can().chain().focus().deleteTable().run()}
-        title="Remove table"
-      >
-        Remove table
-      </button>
+      {inTable ? (
+        <>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().addColumnBefore().run()}
+            disabled={!editor.can().chain().focus().addColumnBefore().run()}
+            title="Add column before"
+            aria-label="Add column before"
+          >
+            +←
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().addColumnAfter().run()}
+            disabled={!editor.can().chain().focus().addColumnAfter().run()}
+            title="Add column after"
+            aria-label="Add column after"
+          >
+            +→
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().deleteColumn().run()}
+            disabled={!editor.can().chain().focus().deleteColumn().run()}
+            title="Delete column"
+            aria-label="Delete column"
+          >
+            −
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().addRowBefore().run()}
+            disabled={!editor.can().chain().focus().addRowBefore().run()}
+            title="Add row above"
+            aria-label="Add row above"
+          >
+            +↑
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().addRowAfter().run()}
+            disabled={!editor.can().chain().focus().addRowAfter().run()}
+            title="Add row below"
+            aria-label="Add row below"
+          >
+            +↓
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().deleteRow().run()}
+            disabled={!editor.can().chain().focus().deleteRow().run()}
+            title="Delete row"
+            aria-label="Delete row"
+          >
+            −
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().deleteTable().run()}
+            disabled={!editor.can().chain().focus().deleteTable().run()}
+            title="Remove table"
+            aria-label="Remove table"
+          >
+            ✕
+          </button>
+        </>
+      ) : null}
       <span className="toolbar-sep" aria-hidden />
       <button type="button" onClick={setLink}>
         Link
       </button>
       <button type="button" onClick={onImage}>
         Image
+      </button>
+      <button type="button" onClick={onMedia} title="Insert audio or video">
+        ♪
       </button>
       <span className="toolbar-sep" aria-hidden />
       <button
@@ -224,6 +228,52 @@ export function EditorToolbar({ editor, onImage, onCodeSnippet, onSource }) {
       <button type="button" onClick={onSource} title="Switch to raw HTML">
         Source
       </button>
-    </div>
+      </div>
+      {tableOpen ? (
+        <div className="dialog-backdrop" role="presentation" onMouseDown={() => setTableOpen(false)}>
+          <div
+            className="dialog dialog--table"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="table-dialog-title"
+            onMouseDown={(ev) => ev.stopPropagation()}
+          >
+            <h2 id="table-dialog-title">Insert table</h2>
+            <p className="dialog-hint">Choose rows and columns. The first row will be a header row.</p>
+            <div className="field-row">
+              <label className="field">
+                <span>Rows</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={tableRows}
+                  onChange={(e) => setTableRows(e.target.value)}
+                  autoFocus
+                />
+              </label>
+              <label className="field">
+                <span>Columns</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="12"
+                  value={tableCols}
+                  onChange={(e) => setTableCols(e.target.value)}
+                />
+              </label>
+            </div>
+            <div className="dialog-actions">
+              <button type="button" className="btn btn--ghost" onClick={() => setTableOpen(false)}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn--primary" onClick={insertTable}>
+                Insert
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   )
 }

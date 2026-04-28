@@ -44,7 +44,7 @@ export function DraftList({
         <>
           <div className="draft-list__header">
             <h2>Local drafts</h2>
-            <button type="button" className="btn btn--small btn--ghost" onClick={onNew}>
+            <button type="button" className="btn btn--small btn--ghost btn--sky" onClick={onNew}>
               New
             </button>
           </div>

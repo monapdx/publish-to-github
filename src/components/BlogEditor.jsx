@@ -1,4 +1,5 @@
 import { useEditor, EditorContent } from '@tiptap/react'
+import { Node } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -12,6 +13,7 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { EditorToolbar } from './EditorToolbar'
 import { ImageDialog } from './ImageDialog'
 import { CodeSnippetDialog } from './CodeSnippetDialog'
+import { MediaDialog } from './MediaDialog'
 
 const BlogImage = Image.extend({
   addOptions() {
@@ -35,6 +37,44 @@ const BlogImage = Image.extend({
   },
 })
 
+const AudioClip = Node.create({
+  name: 'audioClip',
+  group: 'block',
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      src: { default: null },
+      class: { default: 'blog-audio' },
+    }
+  },
+  parseHTML() {
+    return [{ tag: 'audio[src]' }]
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['audio', { ...HTMLAttributes, controls: 'controls' }]
+  },
+})
+
+const VideoClip = Node.create({
+  name: 'videoClip',
+  group: 'block',
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      src: { default: null },
+      class: { default: 'blog-video' },
+    }
+  },
+  parseHTML() {
+    return [{ tag: 'video[src]' }]
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['video', { ...HTMLAttributes, controls: 'controls', preload: 'metadata' }]
+  },
+})
+
 export function BlogEditor({
   content,
   onChange,
@@ -45,6 +85,8 @@ export function BlogEditor({
   const [imageDialogKey, setImageDialogKey] = useState(0)
   const [snippetOpen, setSnippetOpen] = useState(false)
   const [snippetDialogKey, setSnippetDialogKey] = useState(0)
+  const [mediaOpen, setMediaOpen] = useState(false)
+  const [mediaDialogKey, setMediaDialogKey] = useState(0)
   /** Last `content` prop we successfully applied to the editor (avoids clobbering local edits). */
   const lastSyncedFromProps = useRef(null)
 
@@ -75,6 +117,8 @@ export function BlogEditor({
           placeholder: 'Write your post…',
         }),
         BlogImage,
+        AudioClip,
+        VideoClip,
         Table.configure({
           resizable: false,
           HTMLAttributes: { class: 'blog-table' },
@@ -143,6 +187,18 @@ export function BlogEditor({
     [editor],
   )
 
+  const insertMedia = useCallback(
+    ({ src, kind }) => {
+      if (!editor) return
+      if (kind === 'video') {
+        editor.chain().focus().insertContent({ type: 'videoClip', attrs: { src } }).run()
+        return
+      }
+      editor.chain().focus().insertContent({ type: 'audioClip', attrs: { src } }).run()
+    },
+    [editor],
+  )
+
   if (!editor) {
     return <div className="editor-loading">Loading editor…</div>
   }
@@ -152,6 +208,10 @@ export function BlogEditor({
       <EditorToolbar
         editor={editor}
         onImage={openImageDialog}
+        onMedia={() => {
+          setMediaDialogKey((k) => k + 1)
+          setMediaOpen(true)
+        }}
         onCodeSnippet={() => {
           setSnippetDialogKey((k) => k + 1)
           setSnippetOpen(true)
@@ -170,6 +230,12 @@ export function BlogEditor({
         open={snippetOpen}
         onClose={() => setSnippetOpen(false)}
         onInsert={insertCodeSnippet}
+      />
+      <MediaDialog
+        key={mediaDialogKey}
+        open={mediaOpen}
+        onClose={() => setMediaOpen(false)}
+        onInsert={insertMedia}
       />
     </div>
   )
