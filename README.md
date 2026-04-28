@@ -1,4 +1,4 @@
-# Blog Editor
+# Neo-Brutalist Blog Editor for Github
 
 <img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/neo-butalist-blog-editor-github.png">
 
