@@ -1,12 +1,14 @@
 # Neo-Brutalist Blog Editor for Github
 
+A **no-CMS**, no-lock-in **blog editor** that publishes directly to your **GitHub** repo.
+
 <img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/neo-butalist-blog-editor-github.png">
 
-A small, **browser-only app** for drafting **blog posts** and publishing them as **HTML files** to a **GitHub repository** via the [Contents API](https://docs.github.com/en/rest/repos/contents). Think of it as a personal utility: write in a rich editor or raw HTML, keep drafts locally, and push files into a folder you choose (for example `blog/`).
+Publishes posts as **HTML files** to a **GitHub repository** via the [Contents API](https://docs.github.com/en/rest/repos/contents). Think of it as a personal utility: write in a rich editor or raw HTML, keep drafts locally, and push files into a folder you choose (for example `blog/`).
 
 ## Features
 
-### Editing
+### Toolbar
 
 <img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/toolbar.png">
 
@@ -14,11 +16,21 @@ A small, **browser-only app** for drafting **blog posts** and publishing them as
 
 - **Code mode:** plain `textarea` for the post body HTML.
 
+<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/visual-code-editors.gif" width="732">
+
 - **Tables:** insert a sized table (header row), then add/remove rows and columns or remove the whole table while the cursor is inside the table.
+
+<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/insert-table.png">
+
+- **Upload Media:**
+
+<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/upload-media.png">
 
 - **Code snippets:** insert a multiline snippet from a dialog; optional language label becomes a `language-*` class on `<code>`. In Visual mode the block is styled with decorative triple-backtick lines; exported HTML is a normal `<pre><code>` block.
 
 - **Images:** paste a URL or upload a file (embedded as a data URL in the draft). Alt text, width, height, and alignment classes (`blog-image align-*`) are supported.
+
+<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/insert-image.png">
 
 ### Sidebar
 
@@ -60,3 +72,12 @@ Use a **fine-grained token** that can **read** repository contents (to list and 
 - `npm run build` — production build
 - `npm run preview` — preview the production build
 - `npm run lint` — ESLint
+
+## Why this exists
+
+- No databases
+- No dashboards
+- No subscriptions
+- Just files in your repo
+
+**Write → Save locally → Publish to GitHub**
