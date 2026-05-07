@@ -460,6 +460,7 @@ export default function App() {
               onPreviewBlocked={() =>
                 pushToast('Allow pop-ups in your browser to preview the template output.')
               }
+              onTemplateSaved={(message) => pushToast(message)}
             />
           ) : null}
         </main>

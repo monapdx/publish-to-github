@@ -1,10 +1,22 @@
 import { DEFAULT_POST_TEMPLATE_HTML, persistPostTemplate } from '../lib/postTemplate'
 import { serializePost } from '../lib/postSerializer'
 
-export function PostTemplatePanel({ html, onHtmlChange, previewContext, onPreviewBlocked }) {
+export function PostTemplatePanel({
+  html,
+  onHtmlChange,
+  previewContext,
+  onPreviewBlocked,
+  onTemplateSaved,
+}) {
   function handleReset() {
     onHtmlChange(DEFAULT_POST_TEMPLATE_HTML)
     persistPostTemplate(DEFAULT_POST_TEMPLATE_HTML)
+    onTemplateSaved?.('Restored default template.')
+  }
+
+  function handleSaveTemplate() {
+    persistPostTemplate(html)
+    onTemplateSaved?.('Post template saved. This HTML wraps every post when you publish.')
   }
 
   function handlePreview() {
@@ -28,8 +40,9 @@ export function PostTemplatePanel({ html, onHtmlChange, previewContext, onPrevie
       <div className="post-template__header">
         <h2 id="post-template-heading">Post Template</h2>
         <p className="post-template__lede">
-          Full HTML wrapper used when you publish (shown only in Code view). Add navigation, footer,
-          stylesheets, and scripts.
+          Paste or edit a complete HTML page: site navigation, footer, linked CSS/JS, then keep{' '}
+          <code>{'{{content}}'}</code> where the post body should appear. Saved locally and used on every
+          publish (Code view only).
         </p>
       </div>
 
@@ -50,6 +63,9 @@ export function PostTemplatePanel({ html, onHtmlChange, previewContext, onPrevie
             <button type="button" className="btn btn--ghost" onClick={handleReset}>
               Reset to Default Template
             </button>
+            <button type="button" className="btn btn--sky" onClick={handleSaveTemplate}>
+              Save template
+            </button>
             <button type="button" className="btn btn--primary" onClick={handlePreview}>
               Preview Template Output
             </button>
@@ -57,9 +73,18 @@ export function PostTemplatePanel({ html, onHtmlChange, previewContext, onPrevie
         </div>
 
         <aside id="post-template-help" className="post-template__help">
-          <h3 className="post-template__help-title">Placeholders</h3>
+          <h3 className="post-template__help-title">Navigation &amp; footer</h3>
           <p className="post-template__help-intro">
-            Title, excerpt, slug, and date are escaped for HTML; content is your post body as HTML.
+            Paste any HTML you use across the site—e.g. <code>&lt;nav&gt;…&lt;/nav&gt;</code>,{' '}
+            <code>&lt;header&gt;…&lt;/header&gt;</code>, <code>&lt;footer&gt;…&lt;/footer&gt;</code>. Wrap your post
+            area with <code>&lt;main&gt;</code> or similar and leave{' '}
+            <code>{'{{content}}'}</code> inside <code>&lt;article&gt;</code> (or one wrapper) so the editor output
+            appears there when published.
+          </p>
+          <h3 className="post-template__help-title post-template__help-title--sub">Placeholders</h3>
+          <p className="post-template__help-intro">
+            Title, excerpt, slug, and date are escaped for HTML; <code>{'{{content}}'}</code> is raw HTML from the
+            editor.
           </p>
           <dl className="post-template__placeholders">
             <div>
