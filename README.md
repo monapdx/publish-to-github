@@ -1,12 +1,42 @@
-# Neo-Brutalist Blog Editor for Github
+# 🧱 Pub2Hub — Neo-Brutalist Blog Editor for GitHub
 
-A **no-CMS**, no-lock-in **blog editor** that publishes directly to your **GitHub** repo.
+**Write posts. Click publish. Done.**  
+No CMS. No backend. No subscriptions.
 
-<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/neo-butalist-blog-editor-github.png">
+👉 Live demo: https://monapdx.github.io/publish-to-github/  
+👉 Get it on Gumroad: [Get It Now](https://ashpdx.gumroad.com/l/lvsnmfb)
 
-Publishes posts as **HTML files** to a **GitHub repository** via the [Contents API](https://docs.github.com/en/rest/repos/contents). Think of it as a personal utility: write in a rich editor or raw HTML, keep drafts locally, and push files into a folder you choose (for example `blog/`).
+---
 
-## Features
+**A browser-based editor that publishes directly to your GitHub repo as HTML files.**
+
+No dashboards.  
+No lock-in.  
+No middleman.
+
+Just files → in your repo → under your control.
+
+## 👀 Who this is for
+
+You’ll probably like this if you:
+
+- hate CMS platforms  
+- prefer files over platforms  
+- already use GitHub (or want to)  
+- want full control over your content  
+- don’t want another subscription  
+
+Not for everyone—and that’s intentional.
+
+## 🚫 What this is NOT
+
+- Not a hosted blogging platform  
+- Not beginner-friendly in a hand-holdy way  
+- Not trying to replace WordPress  
+
+It’s a **tool**, not a platform.
+
+## What You Actually Get
 
 | 📝 Editor | 🛠️ Toolbar | 📌 Publishing | 📚 Sidebar |
 |--------|--------|------------|---------|
