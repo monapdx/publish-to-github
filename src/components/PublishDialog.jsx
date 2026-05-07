@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { TEMPLATE_OPTIONS } from '../lib/templates'
 import { defaultGithubSettings } from '../lib/githubSettings'
 
 export function PublishDialog({ open, onClose, initialSettings, onPublish }) {
@@ -100,19 +99,11 @@ export function PublishDialog({ open, onClose, initialSettings, onPublish }) {
               />
             </label>
           </div>
-          <label className="field">
-            <span>HTML template</span>
-            <select
-              value={form.templateId}
-              onChange={(e) => setForm((f) => ({ ...f, templateId: e.target.value }))}
-            >
-              {TEMPLATE_OPTIONS.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <p className="dialog-hint dialog-hint--compact">
+            Published HTML uses your <strong>Post Template</strong>. Edit it in{' '}
+            <strong>Code</strong> view ({' '}
+            <code>{'{{title}}'}</code>, <code>{'{{content}}'}</code>, etc.).
+          </p>
           {error ? <p className="dialog-error">{error}</p> : null}
           <div className="dialog-actions">
             <button type="button" className="btn btn--ghost" onClick={onClose} disabled={busy}>

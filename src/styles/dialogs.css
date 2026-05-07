@@ -32,6 +32,10 @@
   font-weight: 600;
 }
 
+.dialog-hint--compact {
+  margin: 0 0 0.65rem;
+}
+
 .dialog-hint a {
   color: var(--accent);
 }

@@ -8,7 +8,9 @@ import { loadGithubSettings, persistGithubSettings } from './lib/githubSettings'
 import { saveDraft, loadDrafts, loadDraft, deleteDraft } from './lib/drafts'
 import { slugify } from './lib/slugify'
 import { parsePublishedHtml, serializePost } from './lib/postSerializer'
+import { loadPostTemplate, persistPostTemplate } from './lib/postTemplate'
 import { fetchRepoFileText, getFileSha, listPostHtmlFiles, upsertFile } from './lib/github'
+import { PostTemplatePanel } from './components/PostTemplatePanel'
 
 const EMPTY_DOC = '<p></p>'
 const BlogEditor = lazy(() =>
@@ -52,6 +54,7 @@ export default function App() {
   const [publishOpen, setPublishOpen] = useState(false)
   const [publishDialogKey, setPublishDialogKey] = useState(0)
   const [toasts, setToasts] = useState([])
+  const [postTemplateHtml, setPostTemplateHtml] = useState(() => loadPostTemplate())
   /** Snapshot of the last persisted draft (manual save, autosave, or open). */
   const lastSavedRef = useRef({
     id: null,
@@ -110,6 +113,11 @@ export default function App() {
       setPublishedLoading(false)
     }
   }, [githubSettings])
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => persistPostTemplate(postTemplateHtml), 450)
+    return () => window.clearTimeout(handle)
+  }, [postTemplateHtml])
 
   useEffect(() => {
     if (listTab !== 'published') return undefined
@@ -302,7 +310,9 @@ export default function App() {
         title: title.trim() || 'Untitled',
         content,
         excerpt: excerpt.trim(),
-        templateId: form.templateId,
+        slug: s,
+        date: new Date().toISOString(),
+        templateHtml: postTemplateHtml,
       })
       const sha = await getFileSha({
         token: form.token.trim(),
@@ -331,7 +341,18 @@ export default function App() {
       pushToast(`Published to ${path}`)
       loadPublishedList().catch(() => {})
     },
-    [draftId, title, slug, content, excerpt, pushToast, refreshDrafts, handleNewDraft, loadPublishedList],
+    [
+      draftId,
+      title,
+      slug,
+      content,
+      excerpt,
+      postTemplateHtml,
+      pushToast,
+      refreshDrafts,
+      handleNewDraft,
+      loadPublishedList,
+    ],
   )
 
   return (
@@ -431,6 +452,16 @@ export default function App() {
               />
             )}
           </section>
+          {mode === 'code' ? (
+            <PostTemplatePanel
+              html={postTemplateHtml}
+              onHtmlChange={setPostTemplateHtml}
+              previewContext={{ title, slug, excerpt, content }}
+              onPreviewBlocked={() =>
+                pushToast('Allow pop-ups in your browser to preview the template output.')
+              }
+            />
+          ) : null}
         </main>
       </div>
       <PublishDialog

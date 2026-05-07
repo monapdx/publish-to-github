@@ -7,7 +7,6 @@ export function defaultGithubSettings() {
     repo: '',
     branch: 'main',
     postsPath: 'blog/',
-    templateId: 'default',
   }
 }
 

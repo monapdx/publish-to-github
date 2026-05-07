@@ -1,11 +1,39 @@
-import { applyTemplate } from './templates'
+import { applyPostTemplate, DEFAULT_POST_TEMPLATE_HTML } from './postTemplate'
 
 /**
  * Build the final publishable HTML document.
- * @param {{ title: string, content: string, excerpt?: string, templateId?: string }} input
+ * @param {{
+ *   title: string,
+ *   content: string,
+ *   excerpt?: string,
+ *   slug?: string,
+ *   date?: string,
+ *   templateHtml?: string,
+ * }} input
  */
-export function serializePost({ title, content, excerpt = '', templateId = 'default' }) {
-  return applyTemplate(templateId, { title, content, excerpt })
+export function serializePost({
+  title,
+  content,
+  excerpt = '',
+  slug = '',
+  date,
+  templateHtml,
+}) {
+  const tpl =
+    typeof templateHtml === 'string' && templateHtml.trim()
+      ? templateHtml
+      : DEFAULT_POST_TEMPLATE_HTML
+  const publishedDate =
+    typeof date === 'string' && date.trim()
+      ? date.trim()
+      : new Date().toISOString()
+  return applyPostTemplate(tpl, {
+    title,
+    content,
+    excerpt,
+    slug,
+    date: publishedDate,
+  })
 }
 
 function metaContent(doc, name) {
