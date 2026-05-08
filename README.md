@@ -94,7 +94,6 @@ It’s a **tool**, not a platform.
 - React 19, Vite 8, ESLint 9
 - TipTap extensions: StarterKit (minus bundled link, replaced), Link, Underline, Image, Placeholder, Table (+ row / cell / header)
 
-<img src="https://raw.githubusercontent.com/monapdx/Prompt-Scope/refs/heads/main/diagram.png">
 
 ## Setup
 
