@@ -9,6 +9,7 @@ import { saveDraft, loadDrafts, loadDraft, deleteDraft } from './lib/drafts'
 import { slugify } from './lib/slugify'
 import { parsePublishedHtml, serializePost } from './lib/postSerializer'
 import { loadPostTemplate, persistPostTemplate } from './lib/postTemplate'
+import { defaultIndexHtml, getIndexPath, updateIndexHtml } from './lib/blogIndex'
 import { fetchRepoFileText, getFileSha, listPostHtmlFiles, upsertFile } from './lib/github'
 import { PostTemplatePanel } from './components/PostTemplatePanel'
 
@@ -331,6 +332,55 @@ export default function App() {
         message: `Publish: ${title.trim() || path}`,
         sha,
       })
+
+      // Keep /blog/index.html up to date (safe marker-based insert).
+      try {
+        const indexPath = getIndexPath(form.postsPath)
+        let indexText = ''
+        let indexSha = null
+        try {
+          const res = await fetchRepoFileText({
+            token: form.token.trim(),
+            owner: form.owner.trim(),
+            repo: form.repo.trim(),
+            path: indexPath,
+            branch: form.branch.trim() || 'main',
+          })
+          indexText = res.text
+          indexSha = res.sha
+        } catch (err) {
+          // If missing, create a minimal index file.
+          if (String(err?.message || '').includes('404')) {
+            indexText = defaultIndexHtml()
+            indexSha = null
+          } else {
+            throw err
+          }
+        }
+
+        const fileName = path.split('/').pop() || `${s}.html`
+        const nextIndex = updateIndexHtml({
+          indexHtml: indexText,
+          fileName,
+          title: title.trim() || 'Untitled',
+          excerpt: excerpt.trim(),
+          date: new Date().toISOString(),
+        })
+
+        await upsertFile({
+          token: form.token.trim(),
+          owner: form.owner.trim(),
+          repo: form.repo.trim(),
+          path: indexPath,
+          branch: form.branch.trim() || 'main',
+          content: nextIndex,
+          message: `Index: add ${fileName}`,
+          sha: indexSha,
+        })
+      } catch (err) {
+        pushToast(err?.message || 'Published post but could not update blog index.html')
+      }
+
       setGithubSettings({ ...form })
       persistGithubSettings({ ...form })
       if (publishedDraftId) {
