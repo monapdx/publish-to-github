@@ -50,23 +50,23 @@ It’s a **tool**, not a platform.
 
 - **Code mode:** plain `textarea` for the post body HTML.
 
-<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/visual-code-editors.gif" width="732">
+<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/assets/visual-code-editors.gif" width="732">
 
 - **Tables:** insert a sized table (header row), then add/remove rows and columns or remove the whole table while the cursor is inside the table.
 
-<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/insert-table.png">
+<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/assets/insert-table.png">
 
 - **Upload Media:**
 
-<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/upload-media.png">
+<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/assets/upload-media.png">
 
 - **Code snippets:** insert a multiline snippet from a dialog; optional language label becomes a `language-*` class on `<code>`. In Visual mode the block is styled with decorative triple-backtick lines; exported HTML is a normal `<pre><code>` block.
 
-<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/insert-snippet.png">
+<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/assets/insert-snippet.png">
 
 - **Images:** paste a URL or upload a file (embedded as a data URL in the draft). Alt text, width, height, and alignment classes (`blog-image align-*`) are supported.
 
-<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/insert-image.png">
+<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/assets/insert-image.png">
 
 
 
