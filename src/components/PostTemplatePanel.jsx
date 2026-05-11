@@ -24,6 +24,7 @@ export function PostTemplatePanel({
       title: previewContext.title.trim() || 'Untitled',
       content: previewContext.content?.trim() ? previewContext.content : '<p></p>',
       excerpt: previewContext.excerpt.trim(),
+      category: previewContext.category?.trim?.() ?? '',
       slug: previewContext.slug.trim() || 'preview-slug',
       date: new Date().toISOString(),
       templateHtml: html,
@@ -83,8 +84,8 @@ export function PostTemplatePanel({
           </p>
           <h3 className="post-template__help-title post-template__help-title--sub">Placeholders</h3>
           <p className="post-template__help-intro">
-            Title, excerpt, slug, and date are escaped for HTML; <code>{'{{content}}'}</code> is raw HTML from the
-            editor.
+            Title, excerpt, category, slug, and date are escaped for HTML;{' '}
+            <code>{'{{content}}'}</code> is raw HTML from the editor.
           </p>
           <dl className="post-template__placeholders">
             <div>
@@ -98,6 +99,12 @@ export function PostTemplatePanel({
                 <code>{'{{excerpt}}'}</code>
               </dt>
               <dd>Excerpt (e.g. meta description)</dd>
+            </div>
+            <div>
+              <dt>
+                <code>{'{{category}}'}</code>
+              </dt>
+              <dd>Category label (shown on the blog index card&apos;s nb-label span)</dd>
             </div>
             <div>
               <dt>
@@ -120,8 +127,10 @@ export function PostTemplatePanel({
           </dl>
           <p className="post-template__help-tip">
             Optional for GitHub round-trip add{' '}
-            <code>{'<meta name="blog-editor:title" content="{{title}}" />'}</code> and{' '}
-            <code>{'<meta name="blog-editor:excerpt" content="{{excerpt}}" />'}</code> in <code>&lt;head&gt;</code>.
+            <code>{'<meta name="blog-editor:title" content="{{title}}" />'}</code>,{' '}
+            <code>{'<meta name="blog-editor:excerpt" content="{{excerpt}}" />'}</code>, and{' '}
+            <code>{'<meta name="blog-editor:category" content="{{category}}" />'}</code> in{' '}
+            <code>&lt;head&gt;</code>.
           </p>
         </aside>
       </div>

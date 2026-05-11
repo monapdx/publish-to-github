@@ -16,8 +16,8 @@ function writeRaw(list) {
 }
 
 /**
- * @param {{ id?: string, title: string, slug: string, content: string, excerpt?: string }} post
- * @returns {{ id: string, title: string, slug: string, content: string, excerpt: string, updatedAt: string, isUpdate: boolean }}
+ * @param {{ id?: string, title: string, slug: string, content: string, excerpt?: string, category?: string }} post
+ * @returns {{ id: string, title: string, slug: string, content: string, excerpt: string, category: string, updatedAt: string, isUpdate: boolean }}
  */
 export function saveDraft(post) {
   const list = readRaw()
@@ -31,6 +31,7 @@ export function saveDraft(post) {
     slug: post.slug ?? '',
     content: post.content ?? '',
     excerpt: post.excerpt ?? '',
+    category: post.category ?? '',
     updatedAt: now,
   }
   if (idx >= 0) list[idx] = row

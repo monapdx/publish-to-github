@@ -1,12 +1,32 @@
 const START = '<!-- BLOG_EDITOR_POSTS_START -->'
 const END = '<!-- BLOG_EDITOR_POSTS_END -->'
 
+const DEFAULT_LABEL_CLASS = 'nb-bg-pink'
+const DEFAULT_BUTTON_CLASS = 'nb-btn-green'
+const READ_POST_LABEL = 'Read Post'
+
 function escapeHtml(s) {
   return String(s)
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
+}
+
+function decodeHtmlEntities(s) {
+  return String(s)
+    .replaceAll('&quot;', '"')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&amp;', '&')
+}
+
+function stripHtmlTags(s) {
+  return String(s).replace(/<[^>]+>/g, '')
+}
+
+function escapeRegExp(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 function normalizePostsDirectory(postsPath) {
@@ -21,86 +41,115 @@ function indexPathForPostsPath(postsPath) {
   return `${dir}/index.html`
 }
 
-function buildPostListItem({ fileName, title, excerpt, date }) {
-  const safeTitle = escapeHtml(title)
+/**
+ * Build an <article class="nb-card"> card matching the site's neo-brutalist
+ * blog template. The button + label colors are intentionally fixed so cards
+ * look consistent across posts.
+ */
+function buildPostCard({ fileName, title, excerpt, category }) {
+  const safeTitle = escapeHtml(title || 'Untitled')
   const safeExcerpt = escapeHtml(excerpt || '')
-  const safeDate = escapeHtml(date || '')
+  const categoryText =
+    category != null && String(category).trim() !== '' ? String(category).trim() : ''
+  const safeCategory = escapeHtml(categoryText)
+  const safeHref = escapeHtml(fileName)
+  const safeSlug = escapeHtml(fileName.replace(/\.html$/i, ''))
 
-  const excerptHtml = safeExcerpt ? `\n      <p class="post-excerpt">${safeExcerpt}</p>` : ''
-  const dateHtml = safeDate ? `\n      <time class="post-date" datetime="${safeDate}">${safeDate}</time>` : ''
+  const labelLine = safeCategory
+    ? `\n            <span class="nb-label ${DEFAULT_LABEL_CLASS}">${safeCategory}</span>`
+    : ''
 
-  return `    <li class="post-item" data-slug="${escapeHtml(fileName.replace(/\.html$/i, ''))}">
-      <a class="post-link" href="./${escapeHtml(fileName)}">${safeTitle}</a>${dateHtml}${excerptHtml}
-    </li>`
+  return `          <article class="nb-card nb-stack-sm" data-slug="${safeSlug}">${labelLine}
+            <h3>${safeTitle}</h3>
+            <p>${safeExcerpt}</p>
+            <a href="${safeHref}" class="nb-btn ${DEFAULT_BUTTON_CLASS}">${READ_POST_LABEL}</a>
+          </article>`
 }
 
-function ensureMarkerBlock(html, listHtml) {
-  if (html.includes(START) && html.includes(END)) {
-    return replaceMarkerBlock(html, listHtml)
-  }
+/**
+ * Turn a legacy <li class="post-item"> block into the same nb-card article used for new posts.
+ * No category is inferred — the rewritten card has no nb-label span until the post is
+ * re-published with a category set in the editor.
+ */
+function legacyListItemToCard(liBlock) {
+  const hrefMatch = liBlock.match(/href\s*=\s*["'](?:\.\/)?([^"']+\.html)["']/i)
+  if (!hrefMatch) return null
+  const fileName = hrefMatch[1].trim().split('/').pop() || ''
+  if (!fileName) return null
 
-  const block = `${START}
-  <ul class="blog-index">
-${listHtml}
-  </ul>
-${END}`
+  const linkMatch = liBlock.match(
+    /<a\b[^>]*\bclass\s*=\s*["'][^"']*post-link[^"']*["'][^>]*>([\s\S]*?)<\/a>/i,
+  )
+  const linkMatchAlt = liBlock.match(
+    /<a\b[^>]*\bhref\s*=\s*["'](?:\.\/)?[^"']+\.html["'][^>]*>([\s\S]*?)<\/a>/i,
+  )
+  const rawTitle = (linkMatch || linkMatchAlt)?.[1] ?? ''
+  const title = decodeHtmlEntities(stripHtmlTags(rawTitle)).trim() || 'Untitled'
 
-  if (html.includes('</main>')) {
-    return html.replace('</main>', `\n${block}\n</main>`)
-  }
-  if (html.includes('</body>')) {
-    return html.replace('</body>', `\n${block}\n</body>`)
-  }
-  return `${html}\n${block}\n`
+  const excerptMatch = liBlock.match(/<p\b[^>]*\bpost-excerpt\b[^>]*>([\s\S]*?)<\/p>/i)
+  const excerpt = excerptMatch
+    ? decodeHtmlEntities(stripHtmlTags(excerptMatch[1])).trim()
+    : ''
+
+  return buildPostCard({ fileName, title, excerpt, category: '' })
 }
 
-function replaceMarkerBlock(html, listHtml) {
-  const startIdx = html.indexOf(START)
-  const endIdx = html.indexOf(END)
-  if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) return html
-
-  const before = html.slice(0, startIdx + START.length)
-  const after = html.slice(endIdx)
-
-  // Keep user's wrapper structure; replace between markers with a UL.
-  const middle = `\n  <ul class="blog-index">\n${listHtml}\n  </ul>\n`
-  return `${before}${middle}${after}`
-}
-
-function upsertListItem(existingListHtml, newItemHtml, fileName) {
-  const hrefNeedle = `href="./${fileName}"`
-  const lines = String(existingListHtml || '')
-    .split('\n')
-    .map((l) => l.trimEnd())
-    .filter((l) => l.trim() !== '')
-
-  // Remove any existing LI that contains the same href (simple but robust).
-  const filtered = []
-  let skipping = false
-  for (const line of lines) {
-    if (!skipping && line.includes('<li') && line.includes(hrefNeedle)) {
-      skipping = true
-      continue
-    }
-    if (skipping) {
-      if (line.includes('</li>')) skipping = false
-      continue
-    }
-    filtered.push(line)
+function normalizePostBlock(block) {
+  const t = String(block).trim()
+  if (/^<article\b/i.test(t)) return block
+  if (/<li\b[^>]*\bpost-item\b/i.test(t)) {
+    const converted = legacyListItemToCard(t)
+    return converted || block
   }
-
-  return [newItemHtml, ...filtered].join('\n')
+  return block
 }
 
-function extractListHtmlBetweenMarkers(html) {
+function extractInner(html) {
   const startIdx = html.indexOf(START)
   const endIdx = html.indexOf(END)
   if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) return ''
-  const inner = html.slice(startIdx + START.length, endIdx)
-  // Try to pull LI lines from inside existing UL if present; else return full inner.
-  const liMatches = inner.match(/<li[\s\S]*?<\/li>/g)
-  if (liMatches && liMatches.length > 0) return liMatches.join('\n')
-  return inner.trim()
+  return html.slice(startIdx + START.length, endIdx)
+}
+
+/** Pull each item block (either <article>…</article> or <li>…</li>) out of inner text. */
+function extractItems(inner) {
+  const blocks = []
+  const re = /<(article|li)\b[\s\S]*?<\/\1>/gi
+  let m
+  while ((m = re.exec(inner)) !== null) {
+    blocks.push(m[0])
+  }
+  return blocks
+}
+
+/**
+ * True if the given <article>/<li> block's href targets the given file name.
+ * Accepts both bare ("post.html") and dot-prefixed ("./post.html") hrefs.
+ */
+function blockTargetsFile(blockHtml, fileName) {
+  const safe = escapeRegExp(fileName)
+  const re = new RegExp(`href\\s*=\\s*["'](?:\\.\\/)?${safe}["']`, 'i')
+  return re.test(blockHtml)
+}
+
+function replaceInnerBetweenMarkers(html, innerBody) {
+  const startIdx = html.indexOf(START)
+  const endIdx = html.indexOf(END)
+  if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) return html
+  const before = html.slice(0, startIdx + START.length)
+  const after = html.slice(endIdx)
+  return `${before}\n${innerBody}\n${after}`
+}
+
+function injectFreshMarkerBlock(html, innerBody) {
+  const block = `${START}\n${innerBody}\n${END}`
+  if (html.includes('</main>')) {
+    return html.replace('</main>', `${block}\n</main>`)
+  }
+  if (html.includes('</body>')) {
+    return html.replace('</body>', `${block}\n</body>`)
+  }
+  return `${html}\n${block}\n`
 }
 
 export function getIndexPath(postsPath) {
@@ -108,14 +157,42 @@ export function getIndexPath(postsPath) {
 }
 
 /**
- * Build updated index.html content with the new/updated post entry.
- * @param {{ indexHtml: string, fileName: string, title: string, excerpt: string, date: string }} input
+ * Build the updated index.html content with the new/updated post entry.
+ *
+ * Behavior:
+ *   - If START/END markers are present, items between them are kept and the
+ *     new entry is prepended (any existing entry pointing to the same file is
+ *     removed first). Entries are always neo-brutalist <article class="nb-card">
+ *     cards; legacy <li class="post-item"> blocks are converted to that shape.
+ *   - If markers are missing, a fresh marker block is injected near </main>
+ *     or </body> using the same <article> card format.
+ *
+ * @param {{
+ *   indexHtml: string,
+ *   fileName: string,
+ *   title: string,
+ *   excerpt?: string,
+ *   date?: string,
+ *   category?: string,
+ * }} input
  */
-export function updateIndexHtml({ indexHtml, fileName, title, excerpt, date }) {
-  const existingList = extractListHtmlBetweenMarkers(indexHtml)
-  const newItem = buildPostListItem({ fileName, title, excerpt, date })
-  const nextList = upsertListItem(existingList, newItem, fileName)
-  return ensureMarkerBlock(indexHtml, nextList)
+export function updateIndexHtml({ indexHtml, fileName, title, excerpt, date, category }) {
+  void date
+  const hasMarkers = indexHtml.includes(START) && indexHtml.includes(END)
+  const inner = hasMarkers ? extractInner(indexHtml) : ''
+
+  const existingItems = extractItems(inner)
+    .filter((block) => !blockTargetsFile(block, fileName))
+    .map(normalizePostBlock)
+
+  const newItem = buildPostCard({ fileName, title, excerpt, category })
+
+  const innerBody = [newItem, ...existingItems].join('\n')
+
+  if (hasMarkers) {
+    return replaceInnerBetweenMarkers(indexHtml, innerBody)
+  }
+  return injectFreshMarkerBlock(indexHtml, innerBody)
 }
 
 export function defaultIndexHtml() {
@@ -129,13 +206,12 @@ export function defaultIndexHtml() {
 <body>
   <main class="blog-index-page">
     <h1>Blog</h1>
+    <section class="nb-cards">
 ${START}
-  <ul class="blog-index">
-  </ul>
 ${END}
+    </section>
   </main>
 </body>
 </html>
 `
 }
-

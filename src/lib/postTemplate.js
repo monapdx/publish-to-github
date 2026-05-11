@@ -7,6 +7,7 @@ export const DEFAULT_POST_TEMPLATE_HTML = `<!doctype html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{title}}</title>
   <meta name="description" content="{{excerpt}}" />
+  <meta name="blog-editor:category" content="{{category}}" />
   <link rel="stylesheet" href="../styles.css" />
 </head>
 <body>
@@ -32,16 +33,19 @@ export function applyPostTemplate(templateHtml, {
   title,
   content,
   excerpt = '',
+  category = '',
   slug = '',
   date = '',
 }) {
   const safeTitle = escapeHtml(title)
   const safeExcerpt = escapeHtml(excerpt ?? '')
+  const safeCategory = escapeHtml(category ?? '')
   const safeSlug = escapeHtml(slug ?? '')
   const safeDate = escapeHtml(date ?? '')
   return String(templateHtml)
     .replaceAll('{{title}}', safeTitle)
     .replaceAll('{{excerpt}}', safeExcerpt)
+    .replaceAll('{{category}}', safeCategory)
     .replaceAll('{{slug}}', safeSlug)
     .replaceAll('{{date}}', safeDate)
     .replaceAll('{{content}}', content ?? '')

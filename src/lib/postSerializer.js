@@ -6,6 +6,7 @@ import { applyPostTemplate, DEFAULT_POST_TEMPLATE_HTML } from './postTemplate'
  *   title: string,
  *   content: string,
  *   excerpt?: string,
+ *   category?: string,
  *   slug?: string,
  *   date?: string,
  *   templateHtml?: string,
@@ -15,6 +16,7 @@ export function serializePost({
   title,
   content,
   excerpt = '',
+  category = '',
   slug = '',
   date,
   templateHtml,
@@ -31,6 +33,7 @@ export function serializePost({
     title,
     content,
     excerpt,
+    category,
     slug,
     date: publishedDate,
   })
@@ -43,10 +46,10 @@ function metaContent(doc, name) {
 }
 
 /**
- * Extract title, excerpt, and post body HTML from a published full-page document.
+ * Extract title, excerpt, category, and post body HTML from a published full-page document.
  * Prefers `blog-editor:*` meta tags when present (accurate round-trip from this app).
  * @param {string} html
- * @returns {{ title: string, excerpt: string, content: string }}
+ * @returns {{ title: string, excerpt: string, category: string, content: string }}
  */
 export function parsePublishedHtml(html) {
   const parser = new DOMParser()
@@ -54,6 +57,7 @@ export function parsePublishedHtml(html) {
 
   const metaTitle = metaContent(doc, 'blog-editor:title').trim()
   const metaExcerpt = metaContent(doc, 'blog-editor:excerpt').trim()
+  const metaCategory = metaContent(doc, 'blog-editor:category').trim()
 
   const domTitle =
     doc.querySelector('main.blog-post h1')?.textContent?.trim() ||
@@ -66,6 +70,7 @@ export function parsePublishedHtml(html) {
   const title = metaTitle || domTitle
 
   const excerpt = metaExcerpt || metaContent(doc, 'description').trim()
+  const category = metaCategory
 
   let content = ''
 
@@ -77,7 +82,7 @@ export function parsePublishedHtml(html) {
   if (article) {
     const inner = article.innerHTML?.trim()
     content = inner ? article.innerHTML : '<p></p>'
-    return { title, excerpt, content }
+    return { title, excerpt, category, content }
   }
 
   const main = doc.querySelector('main.blog-post') || doc.querySelector('main')
@@ -88,7 +93,7 @@ export function parsePublishedHtml(html) {
     const inner = clone.innerHTML?.trim()
     if (inner) {
       content = clone.innerHTML
-      return { title, excerpt, content }
+      return { title, excerpt, category, content }
     }
   }
 
@@ -97,9 +102,9 @@ export function parsePublishedHtml(html) {
     const inner = body.innerHTML?.trim()
     if (inner) {
       content = body.innerHTML
-      return { title, excerpt, content }
+      return { title, excerpt, category, content }
     }
   }
 
-  return { title, excerpt, content: '<p></p>' }
+  return { title, excerpt, category, content: '<p></p>' }
 }

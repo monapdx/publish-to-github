@@ -42,6 +42,7 @@ export default function App() {
   const [slugManual, setSlugManual] = useState(false)
   const [content, setContent] = useState(EMPTY_DOC)
   const [excerpt, setExcerpt] = useState('')
+  const [category, setCategory] = useState('')
   const [mode, setMode] = useState('visual')
   const [draftId, setDraftId] = useState(null)
   const [updatedAt, setUpdatedAt] = useState('')
@@ -63,6 +64,7 @@ export default function App() {
     slug: '',
     content: EMPTY_DOC,
     excerpt: '',
+    category: '',
   })
 
   const dismissToast = useCallback((id) => {
@@ -148,6 +150,7 @@ export default function App() {
       slug: fields.slug,
       content: fields.content,
       excerpt: fields.excerpt,
+      category: fields.category,
     }
   }, [])
 
@@ -159,17 +162,18 @@ export default function App() {
       slug,
       content,
       excerpt,
+      category,
     })
     setDraftId(row.id)
     setUpdatedAt(row.updatedAt)
-    persistSnapshot(row.id, { title, slug, content, excerpt })
+    persistSnapshot(row.id, { title, slug, content, excerpt, category })
     refreshDrafts()
     pushToast(
       row.isUpdate
         ? 'Changes to this draft saved locally.'
         : 'Draft saved. Your latest version is stored locally.',
     )
-  }, [draftId, title, slug, content, excerpt, refreshDrafts, pushToast, persistSnapshot])
+  }, [draftId, title, slug, content, excerpt, category, refreshDrafts, pushToast, persistSnapshot])
 
   /** Autosave open drafts after idle edits (no toast). */
   useEffect(() => {
@@ -180,7 +184,8 @@ export default function App() {
       snap.title === title &&
       snap.slug === slug &&
       snap.content === content &&
-      snap.excerpt === excerpt
+      snap.excerpt === excerpt &&
+      snap.category === category
     ) {
       return undefined
     }
@@ -191,13 +196,14 @@ export default function App() {
         slug,
         content,
         excerpt,
+        category,
       })
-      persistSnapshot(row.id, { title, slug, content, excerpt })
+      persistSnapshot(row.id, { title, slug, content, excerpt, category })
       setUpdatedAt(row.updatedAt)
       refreshDrafts()
     }, 2000)
     return () => window.clearTimeout(handle)
-  }, [draftId, title, slug, content, excerpt, refreshDrafts, persistSnapshot])
+  }, [draftId, title, slug, content, excerpt, category, refreshDrafts, persistSnapshot])
 
   useEffect(() => {
     function onKeyDown(e) {
@@ -221,6 +227,7 @@ export default function App() {
       const body = d.content && d.content.trim() ? d.content : EMPTY_DOC
       setContent(body)
       setExcerpt(d.excerpt ?? '')
+      setCategory(d.category ?? '')
       setUpdatedAt(d.updatedAt ?? '')
       setMode('visual')
       lastSavedRef.current = {
@@ -229,6 +236,7 @@ export default function App() {
         slug: d.slug ?? '',
         content: body,
         excerpt: d.excerpt ?? '',
+        category: d.category ?? '',
       }
     },
     [],
@@ -242,6 +250,7 @@ export default function App() {
     setSlugManual(false)
     setContent(EMPTY_DOC)
     setExcerpt('')
+    setCategory('')
     setUpdatedAt('')
     setMode('visual')
     lastSavedRef.current = {
@@ -250,6 +259,7 @@ export default function App() {
       slug: '',
       content: EMPTY_DOC,
       excerpt: '',
+      category: '',
     }
   }, [])
 
@@ -262,8 +272,12 @@ export default function App() {
       if (!token || !owner || !repo) return
       try {
         const { text } = await fetchRepoFileText({ token, owner, repo, path, branch })
-        const { title: parsedTitle, excerpt: parsedExcerpt, content: parsedContent } =
-          parsePublishedHtml(text)
+        const {
+          title: parsedTitle,
+          excerpt: parsedExcerpt,
+          content: parsedContent,
+          category: parsedCategory,
+        } = parsePublishedHtml(text)
         const basename = path.split('/').pop() || 'post'
         const slugFromFile = basename.replace(/\.html$/i, '') || 'post'
         const body =
@@ -275,6 +289,7 @@ export default function App() {
         setSlug(slugFromFile)
         setContent(body)
         setExcerpt(parsedExcerpt ?? '')
+        setCategory(parsedCategory ?? '')
         setUpdatedAt('')
         setMode('visual')
         lastSavedRef.current = {
@@ -283,6 +298,7 @@ export default function App() {
           slug: slugFromFile,
           content: body,
           excerpt: parsedExcerpt ?? '',
+          category: parsedCategory ?? '',
         }
       } catch (err) {
         pushToast(err?.message || 'Failed to load file from GitHub')
@@ -311,6 +327,7 @@ export default function App() {
         title: title.trim() || 'Untitled',
         content,
         excerpt: excerpt.trim(),
+        category: category.trim(),
         slug: s,
         date: new Date().toISOString(),
         templateHtml: postTemplateHtml,
@@ -364,6 +381,7 @@ export default function App() {
           fileName,
           title: title.trim() || 'Untitled',
           excerpt: excerpt.trim(),
+          category: category.trim(),
           date: new Date().toISOString(),
         })
 
@@ -397,6 +415,7 @@ export default function App() {
       slug,
       content,
       excerpt,
+      category,
       postTemplateHtml,
       pushToast,
       refreshDrafts,
@@ -466,6 +485,15 @@ export default function App() {
                 placeholder="Optional short summary (saved in drafts and in published HTML meta)"
               />
             </label>
+            <label className="field field--inline">
+              <span>Category</span>
+              <input
+                type="text"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="Optional label shown on the blog index card (e.g. Vibe Coding)"
+              />
+            </label>
             <p className="post-meta__hint">
               {publishedSource ? (
                 <>
@@ -506,7 +534,7 @@ export default function App() {
             <PostTemplatePanel
               html={postTemplateHtml}
               onHtmlChange={setPostTemplateHtml}
-              previewContext={{ title, slug, excerpt, content }}
+              previewContext={{ title, slug, excerpt, category, content }}
               onPreviewBlocked={() =>
                 pushToast('Allow pop-ups in your browser to preview the template output.')
               }
