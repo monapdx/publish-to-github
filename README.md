@@ -16,6 +16,14 @@ No middleman.
 
 Just files → in your repo → under your control.
 
+## Windows setup
+
+1. Download this project as a ZIP
+2. Unzip it
+3. Double-click `install.bat`
+4. After it finishes, double-click `start.bat`
+5. The editor will open in your browser
+
 ## 👀 Who this is for
 
 You’ll probably like this if you:
