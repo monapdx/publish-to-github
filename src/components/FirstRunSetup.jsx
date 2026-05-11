@@ -57,8 +57,8 @@ export function FirstRunSetup({ initialSettings, onSave, onOpenHelp }) {
 
           <div className="first-run__storage-note">
             <strong>Where settings are saved:</strong> in this browser only, under this site address (like a small
-            notebook on your computer). To change them later, use <strong>“Connection &amp; publish”</strong> in the top
-            bar after you finish setup.
+            notebook on your computer). To change them later, use <strong>Publish</strong> in the top bar after you
+            finish setup.
           </div>
 
           {error ? <p className="dialog-error">{error}</p> : null}

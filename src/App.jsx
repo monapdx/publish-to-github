@@ -41,6 +41,23 @@ function buildFilePath(postsPath, slug) {
   return `${base}${clean || 'post'}.html`
 }
 
+function truncatePreview(s, max = 48) {
+  const t = String(s || '').trim()
+  if (!t) return ''
+  return t.length > max ? `${t.slice(0, max)}…` : t
+}
+
+function formatMetaExtrasPreview(slug, excerpt, category) {
+  const s = truncatePreview(slug, 28)
+  const e = truncatePreview(excerpt, 36)
+  const c = truncatePreview(category, 20)
+  const parts = []
+  if (s) parts.push(`Slug: ${s}`)
+  if (e) parts.push(`Excerpt: ${e}`)
+  if (c) parts.push(`Category: ${c}`)
+  return parts.length ? parts.join(' · ') : 'Not set — expand to edit'
+}
+
 export default function App() {
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
@@ -466,7 +483,7 @@ export default function App() {
     (form) => {
       setGithubSettings({ ...form })
       persistGithubSettings({ ...form })
-      pushToast('Connection settings saved in this browser. Change them anytime from Connection & publish.')
+      pushToast('Connection settings saved in this browser. Change them anytime from Publish.')
     },
     [pushToast],
   )
@@ -487,7 +504,6 @@ export default function App() {
             onSaveDraft={handleSaveDraft}
             onPublish={openPublishDialog}
             onOpenHelp={() => setHelpOpen(true)}
-            onEditBlogIndex={openBlogIndexEditor}
           />
           {indexHomeBanner.show ? (
             <div className="app-banner" role="status">
@@ -532,38 +548,46 @@ export default function App() {
                 placeholder="e.g. My first weekend post"
               />
             </label>
-            <label className="field field--inline">
-              <span>Slug</span>
-              <input
-                type="text"
-                value={slug}
-                onChange={(e) => onSlugChange(e.target.value)}
-                placeholder="Short name for the file URL (e.g. my-first-post)"
-              />
-            </label>
-            <label className="field field--inline field--excerpt">
-              <span>Excerpt</span>
-              <input
-                type="text"
-                value={excerpt}
-                onChange={(e) => setExcerpt(e.target.value)}
-                placeholder="Optional short blurb (shown in listings if your site uses it)"
-              />
-            </label>
-            <label className="field field--inline">
-              <span>Category</span>
-              <input
-                type="text"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="Optional topic label (e.g. Travel)"
-              />
-            </label>
+            <details className="post-meta__collapsible">
+              <summary className="post-meta__collapsible-summary">
+                <span className="post-meta__collapsible-title">Slug, excerpt &amp; category</span>
+                <span className="post-meta__collapsible-preview">{formatMetaExtrasPreview(slug, excerpt, category)}</span>
+              </summary>
+              <div className="post-meta__collapsible-body">
+                <label className="field field--inline">
+                  <span>Slug</span>
+                  <input
+                    type="text"
+                    value={slug}
+                    onChange={(e) => onSlugChange(e.target.value)}
+                    placeholder="Short name for the file URL (e.g. my-first-post)"
+                  />
+                </label>
+                <label className="field field--inline field--excerpt">
+                  <span>Excerpt</span>
+                  <input
+                    type="text"
+                    value={excerpt}
+                    onChange={(e) => setExcerpt(e.target.value)}
+                    placeholder="Optional short blurb (shown in listings if your site uses it)"
+                  />
+                </label>
+                <label className="field field--inline">
+                  <span>Category</span>
+                  <input
+                    type="text"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="Optional topic label (e.g. Travel)"
+                  />
+                </label>
+              </div>
+            </details>
             <p className="post-meta__hint post-meta__hint--soft">
               {publishedSource ? (
                 <>
-                  Published file <code>{publishedSource.path}</code> — use <strong>Save draft locally</strong> to keep
-                  a copy on this computer.
+                  Published file <code>{publishedSource.path}</code> — use <strong>Save draft</strong> to keep a copy on
+                  this computer.
                 </>
               ) : draftId ? (
                 <>
@@ -571,7 +595,7 @@ export default function App() {
                   {updatedAt ? ` · Last saved ${new Date(updatedAt).toLocaleString()}` : null}
                 </>
               ) : (
-                'New draft — nothing saved on this computer yet. Use Save draft locally when you want a backup.'
+                'New draft — nothing saved on this computer yet. Use Save draft when you want a backup.'
               )}
             </p>
           </div>
@@ -604,6 +628,7 @@ export default function App() {
                 pushToast('Allow pop-ups in your browser to preview the template output.')
               }
               onTemplateSaved={(message) => pushToast(message)}
+              onEditBlogIndex={openBlogIndexEditor}
             />
           ) : null}
             </main>

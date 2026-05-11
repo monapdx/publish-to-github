@@ -54,8 +54,9 @@ export function HelpPage({ open, onClose }) {
               After each publish, the app can add a short “post card” block to your <strong>homepage file</strong> (
               <code>index.html</code> next to your posts folder). It only does this if you place two{' '}
               <strong>marker comments</strong> in the HTML — invisible labels that do not show on the public site. New
-              posts are inserted <strong>between</strong> them (newest first). Open <strong>Edit homepage</strong> in
-              the top bar to edit the file, check markers, and customize the card HTML.
+              posts are inserted <strong>between</strong> them (newest first). Switch to <strong>Code</strong> view and
+              use <strong>Edit homepage</strong> (next to the post template tools) to edit the file, check markers, and
+              customize the card HTML.
             </p>
             <pre className="help-marker-snippet">{MARKER_BLOCK_SNIPPET}</pre>
           </section>
@@ -79,8 +80,8 @@ export function HelpPage({ open, onClose }) {
           <section className="help-section">
             <h3>How to add the token here</h3>
             <p>
-              On first launch, use the welcome screen. Later, open <strong>Connection &amp; publish</strong> in the top
-              bar. Settings are stored in your browser on this computer (not on our servers).
+              On first launch, use the welcome screen. Later, open <strong>Publish</strong> in the top bar. Settings are
+              stored in your browser on this computer (not on our servers).
             </p>
           </section>
 
@@ -90,7 +91,7 @@ export function HelpPage({ open, onClose }) {
               <li>Write a title and your post in the main editor.</li>
               <li>Click <strong>Save draft locally</strong> if you want a backup on this computer.</li>
               <li>
-                Click <strong>Connection &amp; publish</strong>, confirm your repo details, then{' '}
+                Click <strong>Publish</strong>, confirm your repo details, then{' '}
                 <strong>Publish to GitHub</strong>.
               </li>
               <li>Wait for the success message. Your file appears in the posts folder you configured.</li>

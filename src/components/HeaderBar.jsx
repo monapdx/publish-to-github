@@ -1,4 +1,4 @@
-export function HeaderBar({ mode, onModeChange, onSaveDraft, onPublish, onOpenHelp, onEditBlogIndex }) {
+export function HeaderBar({ mode, onModeChange, onSaveDraft, onPublish, onOpenHelp }) {
   return (
     <header className="header-bar">
       <div className="header-bar__brand">
@@ -12,11 +12,6 @@ export function HeaderBar({ mode, onModeChange, onSaveDraft, onPublish, onOpenHe
         <button type="button" className="btn btn--ghost btn--small" onClick={onOpenHelp}>
           Help
         </button>
-        {onEditBlogIndex ? (
-          <button type="button" className="btn btn--ghost btn--small" onClick={onEditBlogIndex}>
-            Edit homepage
-          </button>
-        ) : null}
         <div className="segmented" role="group" aria-label="Editor mode">
           <button
             type="button"
@@ -34,10 +29,10 @@ export function HeaderBar({ mode, onModeChange, onSaveDraft, onPublish, onOpenHe
           </button>
         </div>
         <button type="button" className="btn btn--ghost btn--sky" onClick={onSaveDraft}>
-          Save draft locally
+          Save draft
         </button>
         <button type="button" className="btn btn--primary" onClick={onPublish}>
-          Connection &amp; publish
+          Publish
         </button>
       </div>
     </header>

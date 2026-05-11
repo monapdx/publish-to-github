@@ -7,6 +7,7 @@ export function PostTemplatePanel({
   previewContext,
   onPreviewBlocked,
   onTemplateSaved,
+  onEditBlogIndex,
 }) {
   function handleReset() {
     onHtmlChange(DEFAULT_POST_TEMPLATE_HTML)
@@ -61,6 +62,11 @@ export function PostTemplatePanel({
             />
           </label>
           <div className="post-template__actions">
+            {onEditBlogIndex ? (
+              <button type="button" className="btn btn--ghost" onClick={onEditBlogIndex}>
+                Edit homepage
+              </button>
+            ) : null}
             <button type="button" className="btn btn--ghost" onClick={handleReset}>
               Reset to Default Template
             </button>

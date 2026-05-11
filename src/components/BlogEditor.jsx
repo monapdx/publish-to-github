@@ -218,7 +218,7 @@ export function BlogEditor({
         }}
         onSource={onRequestSourceMode}
       />
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className="blog-editor__content-root" />
       <ImageDialog
         key={imageDialogKey}
         open={imageOpen}

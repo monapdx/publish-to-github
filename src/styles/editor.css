@@ -1,22 +1,69 @@
 .editor-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 1rem;
   color: var(--muted);
+  font-weight: 600;
+}
+
+.editor-section > * {
+  flex: 1;
+  min-height: 0;
 }
 
 .blog-editor {
   display: flex;
   flex-direction: column;
-  min-height: 380px;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
   border: 3px solid #111;
   background: #ffd7f1;
   box-shadow: 6px 6px 0 #111;
 }
 
-.blog-editor .tiptap {
-  flex: 1;
-  padding: 1rem 1.1rem 1.35rem;
-  min-height: 320px;
+.blog-editor .editor-toolbar {
+  flex-shrink: 0;
+}
+
+/* React EditorContent mounts a plain div; grow it so ProseMirror can fill the column */
+.blog-editor__content-root {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* ProseMirror root (may also have .tiptap from editor props) */
+.blog-editor__content-root .ProseMirror,
+.blog-editor__content-root .tiptap.ProseMirror {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1rem 1.15rem 1.5rem;
   outline: none;
+  background-color: #fff8fd;
+  background-image: radial-gradient(#1112 1px, transparent 1px);
+  background-size: 14px 14px;
+  background-position: 4px 4px;
+}
+
+/* If TipTap nests .tiptap wrapper around .ProseMirror */
+.blog-editor__content-root .tiptap:not(.ProseMirror) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffd7f1;
+}
+
+.blog-editor__content-root .tiptap:not(.ProseMirror) .ProseMirror {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1rem 1.15rem 1.5rem;
   background-color: #fff8fd;
   background-image: radial-gradient(#1112 1px, transparent 1px);
   background-size: 14px 14px;
@@ -210,7 +257,8 @@
 
 .html-editor {
   width: 100%;
-  min-height: 380px;
+  min-height: min(320px, 50vh);
+  flex: 1;
   resize: vertical;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.85rem;
@@ -230,7 +278,7 @@
   border: 4px solid #111;
   background: #ffd7f1;
   box-shadow: 6px 6px 0 #111;
-  padding: 0.7rem;
+  padding: 0.85rem 0.8rem;
   align-self: start;
 }
 

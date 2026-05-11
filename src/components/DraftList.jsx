@@ -51,8 +51,8 @@ export function DraftList({
           </div>
           {drafts.length === 0 ? (
             <p className="draft-list__empty">
-              No drafts yet. Write a title and your post, then use <strong>Save draft locally</strong> in the top bar to
-              keep a copy on this computer.
+              No drafts yet. Write a title and your post, then use <strong>Save draft</strong> in the top bar to keep a
+              copy on this computer.
             </p>
           ) : (
             <ul className="draft-list__items">
@@ -97,8 +97,8 @@ export function DraftList({
           </div>
           {!githubReady ? (
             <p className="draft-list__empty">
-              Connect GitHub with <strong>Connection &amp; publish</strong> in the top bar (or finish the welcome setup)
-              to list HTML posts from your repo.
+              Connect GitHub with <strong>Publish</strong> in the top bar (or finish the welcome setup) to list HTML
+              posts from your repo.
             </p>
           ) : publishedLoading ? (
             <p className="draft-list__empty">Loading your published posts from GitHub…</p>
@@ -117,7 +117,7 @@ export function DraftList({
               No HTML posts found in your posts folder yet. After you publish once, files appear here. If you expected
               files already, check your <strong>posts folder path</strong> and <strong>branch</strong> under{' '}
               <button type="button" className="draft-list__link" onClick={onOpenPublishSettings}>
-                Connection &amp; publish
+                Publish
               </button>
               .
             </p>
