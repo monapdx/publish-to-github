@@ -3,36 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Pub2Hub Editor — write blog posts and publish them straight to a GitHub repo.",
-  "author": "Pub2Hub",
-  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "electron": "electron .",
-    "electron-dev": "concurrently -k -n vite,electron -c blue,magenta \"npm run dev\" \"wait-on http://localhost:5173 && cross-env ELECTRON_START_URL=http://localhost:5173 electron .\"",
-    "dist": "vite build && electron-builder --win portable"
-  },
-  "build": {
-    "appId": "com.pub2hub.editor",
-    "productName": "Pub2Hub Editor",
-    "directories": {
-      "output": "release",
-      "buildResources": "build"
-    },
-    "files": [
-      "dist/**/*",
-      "electron/**/*",
-      "package.json"
-    ],
-    "win": {
-      "target": "portable"
-    },
-    "portable": {
-      "artifactName": "Pub2Hub-Editor-${version}-portable.exe"
-    }
+    "preview": "vite preview"
   },
   "dependencies": {
     "@tiptap/extension-image": "^3.22.4",
@@ -54,15 +29,10 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
-    "concurrently": "^9.2.1",
-    "cross-env": "^10.1.0",
-    "electron": "^42.0.1",
-    "electron-builder": "^26.8.1",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
-    "vite": "^8.0.9",
-    "wait-on": "^9.0.10"
+    "vite": "^8.0.9"
   }
 }
