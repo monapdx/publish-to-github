@@ -45,6 +45,38 @@ body {
   background: #fffdf0;
 }
 
+.app-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 auto;
+  padding: 0.65rem 1rem;
+  max-width: min(1280px, 100%);
+  width: 100%;
+  border-bottom: 3px solid #111;
+  background: #ffe58d;
+  box-shadow: 0 3px 0 #111;
+}
+
+.app-banner p {
+  margin: 0;
+  flex: 1;
+  min-width: min(280px, 100%);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #2a2618;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.app-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
 .app-body {
   flex: 1;
   display: grid;

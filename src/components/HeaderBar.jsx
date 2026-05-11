@@ -1,11 +1,22 @@
-export function HeaderBar({ mode, onModeChange, onSaveDraft, onPublish }) {
+export function HeaderBar({ mode, onModeChange, onSaveDraft, onPublish, onOpenHelp, onEditBlogIndex }) {
   return (
     <header className="header-bar">
       <div className="header-bar__brand">
         <span className="header-bar__logo" aria-hidden />
-        <h1>Blog Editor</h1>
+        <div className="header-bar__titles">
+          <h1>Publish to GitHub</h1>
+          <p className="header-bar__subtitle">Write posts, then send them to your site folder.</p>
+        </div>
       </div>
       <div className="header-bar__actions">
+        <button type="button" className="btn btn--ghost btn--small" onClick={onOpenHelp}>
+          Help
+        </button>
+        {onEditBlogIndex ? (
+          <button type="button" className="btn btn--ghost btn--small" onClick={onEditBlogIndex}>
+            Edit homepage
+          </button>
+        ) : null}
         <div className="segmented" role="group" aria-label="Editor mode">
           <button
             type="button"
@@ -23,10 +34,10 @@ export function HeaderBar({ mode, onModeChange, onSaveDraft, onPublish }) {
           </button>
         </div>
         <button type="button" className="btn btn--ghost btn--sky" onClick={onSaveDraft}>
-          Save draft
+          Save draft locally
         </button>
         <button type="button" className="btn btn--primary" onClick={onPublish}>
-          Publish
+          Connection &amp; publish
         </button>
       </div>
     </header>

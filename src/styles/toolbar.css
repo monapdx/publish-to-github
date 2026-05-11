@@ -16,6 +16,28 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
+}
+
+.header-bar__titles {
+  min-width: 0;
+}
+
+.header-bar__subtitle {
+  margin: 0.1rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #3a3642;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.25;
+  max-width: 22rem;
+}
+
+@media (max-width: 720px) {
+  .header-bar__subtitle {
+    display: none;
+  }
 }
 
 .header-bar__logo {
@@ -29,7 +51,7 @@
 
 .header-bar h1 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 900;
   letter-spacing: 0.03em;
   text-transform: uppercase;

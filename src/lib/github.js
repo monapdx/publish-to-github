@@ -1,5 +1,24 @@
 const API = 'https://api.github.com'
 
+export class GitHubApiError extends Error {
+  /**
+   * @param {string} message
+   * @param {{ status?: number, bodyText?: string }} [meta]
+   */
+  constructor(message, { status = 0, bodyText = '' } = {}) {
+    super(message)
+    this.name = 'GitHubApiError'
+    this.status = status
+    this.bodyText = bodyText
+  }
+}
+
+async function throwUnlessOk(res) {
+  if (res.ok) return
+  const bodyText = await res.text()
+  throw new GitHubApiError(`GitHub ${res.status}: ${bodyText}`, { status: res.status, bodyText })
+}
+
 /** Normalize posts folder to a directory path (no leading slash, trailing slash optional). */
 function normalizePostsDirectory(postsPath) {
   if (!postsPath || typeof postsPath !== 'string') return 'blog'
@@ -34,10 +53,7 @@ export async function getFileSha({ token, owner, repo, path, branch }) {
   const url = `${API}/repos/${owner}/${repo}/contents/${encodeRepoPath(path)}?${q}`
   const res = await fetch(url, { headers: headers(token) })
   if (res.status === 404) return null
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`GitHub ${res.status}: ${text}`)
-  }
+  await throwUnlessOk(res)
   const data = await res.json()
   if (data && typeof data.sha === 'string') return data.sha
   return null
@@ -71,10 +87,7 @@ export async function listPostHtmlFiles({ token, owner, repo, branch, postsPath 
   const url = `${API}/repos/${owner}/${repo}/contents/${encodeRepoPath(dir)}?${q}`
   const res = await fetch(url, { headers: headers(token) })
   if (res.status === 404) return []
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`GitHub ${res.status}: ${text}`)
-  }
+  await throwUnlessOk(res)
   const data = await res.json()
   if (!Array.isArray(data)) {
     if (data?.type === 'file' && /\.html$/i.test(data.name ?? '')) {
@@ -97,13 +110,10 @@ export async function fetchRepoFileText({ token, owner, repo, path, branch }) {
   const url = `${API}/repos/${owner}/${repo}/contents/${encodeRepoPath(path)}?${q}`
   const res = await fetch(url, { headers: headers(token) })
   if (res.status === 404) {
-    const text = await res.text()
-    throw new Error(`File not found (404): ${text}`)
+    const bodyText = await res.text()
+    throw new GitHubApiError(`File not found (404): ${bodyText}`, { status: 404, bodyText })
   }
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`GitHub ${res.status}: ${text}`)
-  }
+  await throwUnlessOk(res)
   const data = await res.json()
   if (Array.isArray(data)) {
     throw new Error('Expected a file path, not a directory')
@@ -144,9 +154,6 @@ export async function upsertFile({
     },
     body: JSON.stringify(body),
   })
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`GitHub ${res.status}: ${text}`)
-  }
+  await throwUnlessOk(res)
   return res.json()
 }

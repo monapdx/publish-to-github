@@ -6,6 +6,7 @@ import './styles/editor.css'
 import './styles/toolbar.css'
 import './styles/dialogs.css'
 import './styles/toasts.css'
+import './styles/onboarding.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

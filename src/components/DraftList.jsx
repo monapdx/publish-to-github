@@ -9,6 +9,7 @@ export function DraftList({
   publishedFiles,
   publishedLoading,
   publishedError,
+  publishedErrorDetail,
   currentPublishedPath,
   onOpenPublished,
   onRefreshPublished,
@@ -49,7 +50,10 @@ export function DraftList({
             </button>
           </div>
           {drafts.length === 0 ? (
-            <p className="draft-list__empty">No drafts yet. Save one from the header.</p>
+            <p className="draft-list__empty">
+              No drafts yet. Write a title and your post, then use <strong>Save draft locally</strong> in the top bar to
+              keep a copy on this computer.
+            </p>
           ) : (
             <ul className="draft-list__items">
               {drafts.map((d) => (
@@ -93,18 +97,30 @@ export function DraftList({
           </div>
           {!githubReady ? (
             <p className="draft-list__empty">
-              Add your repository and token in{' '}
-              <button type="button" className="draft-list__link" onClick={onOpenPublishSettings}>
-                Publish
-              </button>{' '}
-              to load published HTML files from your posts folder.
+              Connect GitHub with <strong>Connection &amp; publish</strong> in the top bar (or finish the welcome setup)
+              to list HTML posts from your repo.
             </p>
           ) : publishedLoading ? (
-            <p className="draft-list__empty">Loading published posts…</p>
+            <p className="draft-list__empty">Loading your published posts from GitHub…</p>
           ) : publishedError ? (
-            <p className="draft-list__empty draft-list__error">{publishedError}</p>
+            <div className="draft-list__empty draft-list__error">
+              <p>{publishedError}</p>
+              {publishedErrorDetail ? (
+                <details className="draft-list__empty--detail">
+                  <summary>Details for troubleshooting</summary>
+                  <pre>{publishedErrorDetail}</pre>
+                </details>
+              ) : null}
+            </div>
           ) : publishedFiles.length === 0 ? (
-            <p className="draft-list__empty">No HTML files in your posts folder yet.</p>
+            <p className="draft-list__empty">
+              No HTML posts found in your posts folder yet. After you publish once, files appear here. If you expected
+              files already, check your <strong>posts folder path</strong> and <strong>branch</strong> under{' '}
+              <button type="button" className="draft-list__link" onClick={onOpenPublishSettings}>
+                Connection &amp; publish
+              </button>
+              .
+            </p>
           ) : (
             <ul className="draft-list__items draft-list__items--published">
               {publishedFiles.map((f) => (

@@ -16,13 +16,18 @@ No middleman.
 
 Just files → in your repo → under your control.
 
-## Windows setup
+## Download and run on Windows (simple steps)
 
-1. Download this project as a ZIP
-2. Unzip it
-3. Double-click `install.bat`
-4. After it finishes, double-click `start.bat`
-5. The editor will open in your browser
+You do **not** need to know how to code. You do need a free tool called **Node.js** (the installer adds a program called `npm` that the editor uses).
+
+1. **Download** this project as a ZIP from GitHub (green **Code** button → **Download ZIP**).
+2. **Extract** the ZIP somewhere easy to find, like your Desktop or Documents folder.
+3. **Install Node.js** (once per computer) from [https://nodejs.org/](https://nodejs.org/) if you have not already. Choose the **LTS** version and accept the defaults.
+4. **Double-click `install.bat`** inside the project folder. A black window will open, download pieces the app needs, then pause so you can read any messages. If something fails, the window stays open on purpose.
+5. **Double-click `start.bat`**. Keep that window open. Your web browser should open the editor automatically (often at `http://localhost:5173/`). If it does not, read the line in that window that starts with `http://localhost`.
+6. In the editor, follow the **welcome screen** to add your GitHub username, repository name, branch, posts folder, and personal access token. You can reopen **Help** anytime from the top bar.
+
+To stop the editor, close the browser tab and close the black `start.bat` window (or press Ctrl+C in that window).
 
 ## 👀 Who this is for
 
@@ -39,7 +44,6 @@ Not for everyone—and that’s intentional.
 ## 🚫 What this is NOT
 
 - Not a hosted blogging platform  
-- Not beginner-friendly in a hand-holdy way  
 - Not trying to replace WordPress  
 
 It’s a **tool**, not a platform.
@@ -89,13 +93,13 @@ It’s a **tool**, not a platform.
 
 ### Publishing
 
-- **Publish** opens a dialog: personal access token, owner, repository, branch, **posts folder** path, and HTML template (**full page with site CSS** or **full page with inline styles**).
+- **Connection & publish** opens a dialog: personal access token, GitHub username, repository, branch, **posts folder** path, and (in Code view) your HTML post template.
 
 - Builds `blog/{slug}.html` (or your custom folder + slug) as a complete document and creates or updates the file on the branch.
 
 - **Excerpt** is stored in published HTML (meta tags) when you fill it in; it is included in new publishes alongside title and body.
 
-- Settings are persisted in `localStorage` after a successful publish.
+- Settings are saved in your browser (`localStorage`) after a successful publish or when you click **Save connection settings** in that dialog. The first time you run the app locally, a **welcome** screen walks you through the same fields.
 
 ### Stack
 
@@ -112,7 +116,7 @@ npm run dev
 
 ## GitHub token
 
-Use a **fine-grained token** that can **read** repository contents (to list and open published posts) and **write** contents (to publish), scoped to the repo you use. The token is stored in the browser (`localStorage`) after a successful publish, along with the rest of the publish form.
+Use a **fine-grained** or **classic** personal access token that can **read** repository contents (to list and open published posts) and **write** contents (to publish), scoped to the repo you use. The token stays in your browser on this computer after you publish successfully or save connection settings from the dialog.
 
 ## Scripts
 

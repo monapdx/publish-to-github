@@ -4,13 +4,18 @@ import { ToastStack } from './components/ToastStack'
 import { HtmlEditor } from './components/HtmlEditor'
 import { DraftList } from './components/DraftList'
 import { PublishDialog } from './components/PublishDialog'
+import { FirstRunSetup } from './components/FirstRunSetup'
+import { HelpPage } from './components/HelpPage'
+import { BlogIndexEditorDialog } from './components/BlogIndexEditorDialog'
 import { loadGithubSettings, persistGithubSettings } from './lib/githubSettings'
+import { getFriendlyGithubError } from './lib/githubFriendlyMessages'
 import { saveDraft, loadDrafts, loadDraft, deleteDraft } from './lib/drafts'
 import { slugify } from './lib/slugify'
 import { parsePublishedHtml, serializePost } from './lib/postSerializer'
 import { loadPostTemplate, persistPostTemplate } from './lib/postTemplate'
-import { defaultIndexHtml, getIndexPath, updateIndexHtml } from './lib/blogIndex'
-import { fetchRepoFileText, getFileSha, listPostHtmlFiles, upsertFile } from './lib/github'
+import { GitHubApiError, fetchRepoFileText, getFileSha, listPostHtmlFiles, upsertFile } from './lib/github'
+import { defaultIndexHtml, getIndexPath, tryUpdateIndexWithNewPost } from './lib/blogIndex'
+import { loadIndexEntryTemplate } from './lib/indexEntryTemplate'
 import { PostTemplatePanel } from './components/PostTemplatePanel'
 
 const EMPTY_DOC = '<p></p>'
@@ -52,6 +57,11 @@ export default function App() {
   const [publishedFiles, setPublishedFiles] = useState([])
   const [publishedLoading, setPublishedLoading] = useState(false)
   const [publishedError, setPublishedError] = useState('')
+  const [publishedErrorDetail, setPublishedErrorDetail] = useState('')
+  const [helpOpen, setHelpOpen] = useState(false)
+  const [blogIndexOpen, setBlogIndexOpen] = useState(false)
+  const [blogIndexDialogKey, setBlogIndexDialogKey] = useState(0)
+  const [indexHomeBanner, setIndexHomeBanner] = useState({ show: false, text: '' })
   const [publishedSource, setPublishedSource] = useState(null)
   const [publishOpen, setPublishOpen] = useState(false)
   const [publishDialogKey, setPublishDialogKey] = useState(0)
@@ -96,10 +106,12 @@ export default function App() {
       setPublishedFiles([])
       setPublishedLoading(false)
       setPublishedError('')
+      setPublishedErrorDetail('')
       return
     }
     setPublishedLoading(true)
     setPublishedError('')
+    setPublishedErrorDetail('')
     try {
       const files = await listPostHtmlFiles({
         token,
@@ -110,7 +122,9 @@ export default function App() {
       })
       setPublishedFiles([...files].sort((a, b) => a.name.localeCompare(b.name)))
     } catch (err) {
-      setPublishedError(err?.message || 'Could not load published posts')
+      const { friendly, technical } = getFriendlyGithubError(err, 'list')
+      setPublishedError(friendly)
+      setPublishedErrorDetail(technical)
       setPublishedFiles([])
     } finally {
       setPublishedLoading(false)
@@ -301,7 +315,8 @@ export default function App() {
           category: parsedCategory ?? '',
         }
       } catch (err) {
-        pushToast(err?.message || 'Failed to load file from GitHub')
+        const { friendly } = getFriendlyGithubError(err, 'fetch')
+        pushToast(friendly)
       }
     },
     [githubSettings, pushToast],
@@ -366,8 +381,7 @@ export default function App() {
           indexText = res.text
           indexSha = res.sha
         } catch (err) {
-          // If missing, create a minimal index file.
-          if (String(err?.message || '').includes('404')) {
+          if (err instanceof GitHubApiError && err.status === 404) {
             indexText = defaultIndexHtml()
             indexSha = null
           } else {
@@ -376,27 +390,41 @@ export default function App() {
         }
 
         const fileName = path.split('/').pop() || `${s}.html`
-        const nextIndex = updateIndexHtml({
+        const entryTemplate = loadIndexEntryTemplate()
+        const indexResult = tryUpdateIndexWithNewPost({
           indexHtml: indexText,
           fileName,
           title: title.trim() || 'Untitled',
           excerpt: excerpt.trim(),
           category: category.trim(),
           date: new Date().toISOString(),
+          entryTemplate,
         })
 
-        await upsertFile({
-          token: form.token.trim(),
-          owner: form.owner.trim(),
-          repo: form.repo.trim(),
-          path: indexPath,
-          branch: form.branch.trim() || 'main',
-          content: nextIndex,
-          message: `Index: add ${fileName}`,
-          sha: indexSha,
-        })
+        if (!indexResult.updated) {
+          setIndexHomeBanner({
+            show: true,
+            text:
+              'Your post was published, but it was not added to index.html because the blog post markers were not found (or there are duplicates / order problems). Use Edit homepage to add <!-- BLOG-POSTS-START --> and <!-- BLOG-POSTS-END --> where you want new posts to appear.',
+          })
+        } else {
+          setIndexHomeBanner({ show: false, text: '' })
+          await upsertFile({
+            token: form.token.trim(),
+            owner: form.owner.trim(),
+            repo: form.repo.trim(),
+            path: indexPath,
+            branch: form.branch.trim() || 'main',
+            content: indexResult.indexHtml,
+            message: `Index: add ${fileName}`,
+            sha: indexSha,
+          })
+        }
       } catch (err) {
-        pushToast(err?.message || 'Published post but could not update blog index.html')
+        const { friendly } = getFriendlyGithubError(err, 'index')
+        pushToast(
+          `${friendly} Your post file was still saved; only the homepage (index.html) could not be updated.`,
+        )
       }
 
       setGithubSettings({ ...form })
@@ -406,7 +434,7 @@ export default function App() {
         refreshDrafts()
         handleNewDraft()
       }
-      pushToast(`Published to ${path}`)
+      pushToast(`Your post was published to GitHub: ${path}`)
       loadPublishedList().catch(() => {})
     },
     [
@@ -424,39 +452,76 @@ export default function App() {
     ],
   )
 
+  const openPublishDialog = useCallback(() => {
+    setPublishDialogKey((k) => k + 1)
+    setPublishOpen(true)
+  }, [])
+
+  const openBlogIndexEditor = useCallback(() => {
+    setBlogIndexDialogKey((k) => k + 1)
+    setBlogIndexOpen(true)
+  }, [])
+
+  const handleSaveGithubSettings = useCallback(
+    (form) => {
+      setGithubSettings({ ...form })
+      persistGithubSettings({ ...form })
+      pushToast('Connection settings saved in this browser. Change them anytime from Connection & publish.')
+    },
+    [pushToast],
+  )
+
   return (
     <div className="app-shell">
-      <HeaderBar
-        mode={mode}
-        onModeChange={setMode}
-        onSaveDraft={handleSaveDraft}
-        onPublish={() => {
-          setPublishDialogKey((k) => k + 1)
-          setPublishOpen(true)
-        }}
-      />
-      <div className="app-body">
-        <DraftList
-          listTab={listTab}
-          onListTabChange={setListTab}
-          drafts={drafts}
-          currentDraftId={draftId}
-          onOpenDraft={handleOpenDraft}
-          onDeleteDraft={handleDeleteDraft}
-          onNew={handleNewDraft}
-          publishedFiles={publishedFiles}
-          publishedLoading={publishedLoading}
-          publishedError={publishedError}
-          currentPublishedPath={publishedSource?.path ?? null}
-          onOpenPublished={handleOpenPublished}
-          onRefreshPublished={loadPublishedList}
-          githubReady={githubReady}
-          onOpenPublishSettings={() => {
-            setPublishDialogKey((k) => k + 1)
-            setPublishOpen(true)
-          }}
+      {!githubReady ? (
+        <FirstRunSetup
+          initialSettings={githubSettings}
+          onSave={handleSaveGithubSettings}
+          onOpenHelp={() => setHelpOpen(true)}
         />
-        <main className="app-main">
+      ) : (
+        <>
+          <HeaderBar
+            mode={mode}
+            onModeChange={setMode}
+            onSaveDraft={handleSaveDraft}
+            onPublish={openPublishDialog}
+            onOpenHelp={() => setHelpOpen(true)}
+            onEditBlogIndex={openBlogIndexEditor}
+          />
+          {indexHomeBanner.show ? (
+            <div className="app-banner" role="status">
+              <p>{indexHomeBanner.text}</p>
+              <div className="app-banner__actions">
+                <button type="button" className="btn btn--small btn--primary" onClick={openBlogIndexEditor}>
+                  Edit homepage (index.html)
+                </button>
+                <button type="button" className="btn btn--small btn--ghost" onClick={() => setIndexHomeBanner({ show: false, text: '' })}>
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          ) : null}
+          <div className="app-body">
+            <DraftList
+              listTab={listTab}
+              onListTabChange={setListTab}
+              drafts={drafts}
+              currentDraftId={draftId}
+              onOpenDraft={handleOpenDraft}
+              onDeleteDraft={handleDeleteDraft}
+              onNew={handleNewDraft}
+              publishedFiles={publishedFiles}
+              publishedLoading={publishedLoading}
+              publishedError={publishedError}
+              publishedErrorDetail={publishedErrorDetail}
+              currentPublishedPath={publishedSource?.path ?? null}
+              onOpenPublished={handleOpenPublished}
+              onRefreshPublished={loadPublishedList}
+              githubReady={githubReady}
+              onOpenPublishSettings={openPublishDialog}
+            />
+            <main className="app-main">
           <div className="post-meta">
             <label className="field field--inline">
               <span>Title</span>
@@ -464,7 +529,7 @@ export default function App() {
                 type="text"
                 value={title}
                 onChange={(e) => onTitleChange(e.target.value)}
-                placeholder="Post title"
+                placeholder="e.g. My first weekend post"
               />
             </label>
             <label className="field field--inline">
@@ -473,7 +538,7 @@ export default function App() {
                 type="text"
                 value={slug}
                 onChange={(e) => onSlugChange(e.target.value)}
-                placeholder="url-slug"
+                placeholder="Short name for the file URL (e.g. my-first-post)"
               />
             </label>
             <label className="field field--inline field--excerpt">
@@ -482,7 +547,7 @@ export default function App() {
                 type="text"
                 value={excerpt}
                 onChange={(e) => setExcerpt(e.target.value)}
-                placeholder="Optional short summary (saved in drafts and in published HTML meta)"
+                placeholder="Optional short blurb (shown in listings if your site uses it)"
               />
             </label>
             <label className="field field--inline">
@@ -491,14 +556,14 @@ export default function App() {
                 type="text"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                placeholder="Optional label shown on the blog index card (e.g. Vibe Coding)"
+                placeholder="Optional topic label (e.g. Travel)"
               />
             </label>
-            <p className="post-meta__hint">
+            <p className="post-meta__hint post-meta__hint--soft">
               {publishedSource ? (
                 <>
-                  Published file <code>{publishedSource.path}</code> — use Save draft to keep a
-                  local copy.
+                  Published file <code>{publishedSource.path}</code> — use <strong>Save draft locally</strong> to keep
+                  a copy on this computer.
                 </>
               ) : draftId ? (
                 <>
@@ -506,7 +571,7 @@ export default function App() {
                   {updatedAt ? ` · Last saved ${new Date(updatedAt).toLocaleString()}` : null}
                 </>
               ) : (
-                'New draft — not saved yet'
+                'New draft — nothing saved on this computer yet. Use Save draft locally when you want a backup.'
               )}
             </p>
           </div>
@@ -541,15 +606,31 @@ export default function App() {
               onTemplateSaved={(message) => pushToast(message)}
             />
           ) : null}
-        </main>
-      </div>
+            </main>
+          </div>
+        </>
+      )}
       <PublishDialog
         key={publishDialogKey}
         open={publishOpen}
         onClose={() => setPublishOpen(false)}
         initialSettings={githubSettings}
         onPublish={handlePublish}
+        onSaveSettings={handleSaveGithubSettings}
       />
+      <HelpPage open={helpOpen} onClose={() => setHelpOpen(false)} />
+      {blogIndexOpen ? (
+        <BlogIndexEditorDialog
+          key={blogIndexDialogKey}
+          settings={githubSettings}
+          onClose={() => setBlogIndexOpen(false)}
+          onSaved={() => {
+            pushToast('Homepage file (index.html) saved on GitHub.')
+            setIndexHomeBanner({ show: false, text: '' })
+            loadPublishedList().catch(() => {})
+          }}
+        />
+      ) : null}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </div>
   )

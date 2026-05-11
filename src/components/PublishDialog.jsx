@@ -1,29 +1,49 @@
 import { useState } from 'react'
 import { defaultGithubSettings } from '../lib/githubSettings'
+import { getFriendlyGithubError } from '../lib/githubFriendlyMessages'
+import { GithubSettingsFields } from './GithubSettingsFields'
 
-export function PublishDialog({ open, onClose, initialSettings, onPublish }) {
+export function PublishDialog({ open, onClose, initialSettings, onPublish, onSaveSettings }) {
   const [form, setForm] = useState(() => ({
     ...defaultGithubSettings(),
     ...initialSettings,
   }))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [errorDetail, setErrorDetail] = useState('')
 
   if (!open) return null
+
+  function validateConnection() {
+    if (!form.token.trim() || !form.owner.trim() || !form.repo.trim()) {
+      setError('Please add your GitHub username, repository name, and personal access token.')
+      setErrorDetail('')
+      return false
+    }
+    return true
+  }
+
+  function handleSaveSettings() {
+    setError('')
+    setErrorDetail('')
+    if (!validateConnection()) return
+    onSaveSettings?.({ ...form })
+    onClose()
+  }
 
   async function submit(e) {
     e.preventDefault()
     setError('')
-    if (!form.token.trim() || !form.owner.trim() || !form.repo.trim()) {
-      setError('Token, owner, and repository name are required.')
-      return
-    }
+    setErrorDetail('')
+    if (!validateConnection()) return
     setBusy(true)
     try {
       await onPublish({ ...form })
       onClose()
     } catch (err) {
-      setError(err?.message || 'Publish failed')
+      const { friendly, technical } = getFriendlyGithubError(err, 'publish')
+      setError(friendly)
+      setErrorDetail(technical)
     } finally {
       setBusy(false)
     }
@@ -38,79 +58,40 @@ export function PublishDialog({ open, onClose, initialSettings, onPublish }) {
         aria-labelledby="publish-dialog-title"
         onMouseDown={(ev) => ev.stopPropagation()}
       >
-        <h2 id="publish-dialog-title">Publish to GitHub</h2>
-        <p className="dialog-hint">
-          Uses the{' '}
-          <a href="https://docs.github.com/en/rest/repos/contents" target="_blank" rel="noreferrer">
-            Contents API
-          </a>
-          . Prefer a fine-scoped token with <code>contents: write</code> for this repository.
+        <h2 id="publish-dialog-title">Connection &amp; publish</h2>
+        <p className="dialog-hint dialog-hint--soft">
+          Your details are stored in <strong>this browser on this computer</strong> after you publish successfully or
+          when you click <strong>Save connection settings</strong>. To change them later, open this window again from
+          the top bar.
         </p>
         <form onSubmit={submit}>
-          <label className="field">
-            <span>Personal access token</span>
-            <input
-              type="password"
-              autoComplete="off"
-              value={form.token}
-              onChange={(e) => setForm((f) => ({ ...f, token: e.target.value }))}
-              placeholder="github_pat_…"
-              required
-            />
-          </label>
-          <div className="field-row">
-            <label className="field">
-              <span>Owner</span>
-              <input
-                type="text"
-                value={form.owner}
-                onChange={(e) => setForm((f) => ({ ...f, owner: e.target.value }))}
-                placeholder="octocat"
-                required
-              />
-            </label>
-            <label className="field">
-              <span>Repository</span>
-              <input
-                type="text"
-                value={form.repo}
-                onChange={(e) => setForm((f) => ({ ...f, repo: e.target.value }))}
-                placeholder="my-site"
-                required
-              />
-            </label>
-          </div>
-          <div className="field-row">
-            <label className="field">
-              <span>Branch</span>
-              <input
-                type="text"
-                value={form.branch}
-                onChange={(e) => setForm((f) => ({ ...f, branch: e.target.value }))}
-              />
-            </label>
-            <label className="field">
-              <span>Posts folder</span>
-              <input
-                type="text"
-                value={form.postsPath}
-                onChange={(e) => setForm((f) => ({ ...f, postsPath: e.target.value }))}
-                placeholder="blog/"
-              />
-            </label>
-          </div>
+          <GithubSettingsFields form={form} setForm={setForm} idPrefix="publish" disabled={busy} tokenLast />
+
           <p className="dialog-hint dialog-hint--compact">
-            Published HTML uses your <strong>Post Template</strong>. Edit it in{' '}
-            <strong>Code</strong> view ({' '}
-            <code>{'{{title}}'}</code>, <code>{'{{content}}'}</code>, etc.).
+            The page layout for new posts comes from your <strong>Post template</strong> (edit in{' '}
+            <strong>Code</strong> view — placeholders like <code>{'{{title}}'}</code> and{' '}
+            <code>{'{{content}}'}</code>).
           </p>
+
           {error ? <p className="dialog-error">{error}</p> : null}
+          {errorDetail ? (
+            <details className="dialog-error-details">
+              <summary>Details for troubleshooting</summary>
+              <pre>{errorDetail}</pre>
+            </details>
+          ) : null}
+
           <div className="dialog-actions">
             <button type="button" className="btn btn--ghost" onClick={onClose} disabled={busy}>
-              Cancel
+              Close
             </button>
+            {onSaveSettings ? (
+              <button type="button" className="btn btn--ghost btn--sky" onClick={handleSaveSettings} disabled={busy}>
+                Save connection settings
+              </button>
+            ) : null}
             <button type="submit" className="btn btn--primary" disabled={busy}>
-              {busy ? 'Publishing…' : 'Publish'}
+              {busy ? 'Publishing…' : 'Publish to GitHub'}
             </button>
           </div>
         </form>
