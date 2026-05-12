@@ -22,5 +22,10 @@ export function loadGithubSettings() {
 }
 
 export function persistGithubSettings(settings) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+    return true
+  } catch {
+    return false
+  }
 }

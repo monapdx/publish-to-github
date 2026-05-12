@@ -1,4 +1,5 @@
 import { applyPostTemplate, DEFAULT_POST_TEMPLATE_HTML } from './postTemplate'
+import { sanitizePublishedBodyHtml } from './sanitizeHtml'
 
 /**
  * Build the final publishable HTML document.
@@ -81,7 +82,7 @@ export function parsePublishedHtml(html) {
     doc.querySelector('article')
   if (article) {
     const inner = article.innerHTML?.trim()
-    content = inner ? article.innerHTML : '<p></p>'
+    content = inner ? sanitizePublishedBodyHtml(article.innerHTML) : '<p></p>'
     return { title, excerpt, category, content }
   }
 
@@ -92,7 +93,7 @@ export function parsePublishedHtml(html) {
     h?.remove()
     const inner = clone.innerHTML?.trim()
     if (inner) {
-      content = clone.innerHTML
+      content = sanitizePublishedBodyHtml(clone.innerHTML)
       return { title, excerpt, category, content }
     }
   }
@@ -101,7 +102,7 @@ export function parsePublishedHtml(html) {
   if (body) {
     const inner = body.innerHTML?.trim()
     if (inner) {
-      content = body.innerHTML
+      content = sanitizePublishedBodyHtml(body.innerHTML)
       return { title, excerpt, category, content }
     }
   }

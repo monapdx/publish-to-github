@@ -11,13 +11,31 @@ function readRaw() {
   }
 }
 
+function isQuotaExceededError(e) {
+  if (!e) return false
+  if (e.name === 'QuotaExceededError') return true
+  if (e.code === 22 || e.code === 1014) return true
+  return String(e.message || '').toLowerCase().includes('quota')
+}
+
 function writeRaw(list) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+  } catch (e) {
+    if (isQuotaExceededError(e)) {
+      const err = new Error('STORAGE_QUOTA')
+      err.cause = e
+      throw err
+    }
+    throw e
+  }
 }
 
 /**
  * @param {{ id?: string, title: string, slug: string, content: string, excerpt?: string, category?: string }} post
- * @returns {{ id: string, title: string, slug: string, content: string, excerpt: string, category: string, updatedAt: string, isUpdate: boolean }}
+ * @returns
+ *   | { ok: true, id: string, title: string, slug: string, content: string, excerpt: string, category: string, updatedAt: string, isUpdate: boolean }
+ *   | { ok: false, reason: 'quota' | 'unknown', message?: string }
  */
 export function saveDraft(post) {
   const list = readRaw()
@@ -34,10 +52,16 @@ export function saveDraft(post) {
     category: post.category ?? '',
     updatedAt: now,
   }
-  if (idx >= 0) list[idx] = row
-  else list.unshift(row)
-  writeRaw(list)
-  return { ...row, isUpdate }
+  const nextList = idx >= 0 ? list.map((d, i) => (i === idx ? row : d)) : [row, ...list]
+  try {
+    writeRaw(nextList)
+  } catch (e) {
+    if (e instanceof Error && e.message === 'STORAGE_QUOTA') {
+      return { ok: false, reason: 'quota' }
+    }
+    return { ok: false, reason: 'unknown', message: String(e?.message || e) }
+  }
+  return { ok: true, ...row, isUpdate }
 }
 
 export function loadDrafts() {

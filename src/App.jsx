@@ -11,11 +11,10 @@ import { loadGithubSettings, persistGithubSettings } from './lib/githubSettings'
 import { getFriendlyGithubError } from './lib/githubFriendlyMessages'
 import { saveDraft, loadDrafts, loadDraft, deleteDraft } from './lib/drafts'
 import { slugify } from './lib/slugify'
-import { parsePublishedHtml, serializePost } from './lib/postSerializer'
+import { parsePublishedHtml } from './lib/postSerializer'
 import { loadPostTemplate, persistPostTemplate } from './lib/postTemplate'
-import { GitHubApiError, fetchRepoFileText, getFileSha, listPostHtmlFiles, upsertFile } from './lib/github'
-import { defaultIndexHtml, getIndexPath, tryUpdateIndexWithNewPost } from './lib/blogIndex'
-import { loadIndexEntryTemplate } from './lib/indexEntryTemplate'
+import { fetchRepoFileText, listPostHtmlFiles } from './lib/github'
+import { publishPostAndIndex } from './lib/publishPipeline'
 import { PostTemplatePanel } from './components/PostTemplatePanel'
 
 const EMPTY_DOC = '<p></p>'
@@ -195,6 +194,14 @@ export default function App() {
       excerpt,
       category,
     })
+    if (!row.ok) {
+      pushToast(
+        row.reason === 'quota'
+          ? 'Could not save: this browser’s storage is full. Free some space or shorten the post.'
+          : 'Could not save the draft locally. Check that storage is enabled for this site.',
+      )
+      return
+    }
     setDraftId(row.id)
     setUpdatedAt(row.updatedAt)
     persistSnapshot(row.id, { title, slug, content, excerpt, category })
@@ -229,12 +236,18 @@ export default function App() {
         excerpt,
         category,
       })
+      if (!row.ok) {
+        if (row.reason === 'quota') {
+          pushToast('Autosave skipped: browser storage is full.')
+        }
+        return
+      }
       persistSnapshot(row.id, { title, slug, content, excerpt, category })
       setUpdatedAt(row.updatedAt)
       refreshDrafts()
     }, 2000)
     return () => window.clearTimeout(handle)
-  }, [draftId, title, slug, content, excerpt, category, refreshDrafts, persistSnapshot])
+  }, [draftId, title, slug, content, excerpt, category, refreshDrafts, persistSnapshot, pushToast])
 
   useEffect(() => {
     function onKeyDown(e) {
@@ -355,97 +368,25 @@ export default function App() {
       const publishedDraftId = draftId
       const s = slug.trim() || slugify(title) || 'post'
       const path = buildFilePath(form.postsPath, s)
-      const html = serializePost({
-        title: title.trim() || 'Untitled',
-        content,
-        excerpt: excerpt.trim(),
-        category: category.trim(),
+      const { indexHomeBanner, indexErrorToast } = await publishPostAndIndex({
+        form,
+        path,
         slug: s,
-        date: new Date().toISOString(),
-        templateHtml: postTemplateHtml,
+        title,
+        content,
+        excerpt,
+        category,
+        postTemplateHtml,
       })
-      const sha = await getFileSha({
-        token: form.token.trim(),
-        owner: form.owner.trim(),
-        repo: form.repo.trim(),
-        path,
-        branch: form.branch.trim() || 'main',
-      })
-      await upsertFile({
-        token: form.token.trim(),
-        owner: form.owner.trim(),
-        repo: form.repo.trim(),
-        path,
-        branch: form.branch.trim() || 'main',
-        content: html,
-        message: `Publish: ${title.trim() || path}`,
-        sha,
-      })
-
-      // Keep /blog/index.html up to date (safe marker-based insert).
-      try {
-        const indexPath = getIndexPath(form.postsPath)
-        let indexText = ''
-        let indexSha = null
-        try {
-          const res = await fetchRepoFileText({
-            token: form.token.trim(),
-            owner: form.owner.trim(),
-            repo: form.repo.trim(),
-            path: indexPath,
-            branch: form.branch.trim() || 'main',
-          })
-          indexText = res.text
-          indexSha = res.sha
-        } catch (err) {
-          if (err instanceof GitHubApiError && err.status === 404) {
-            indexText = defaultIndexHtml()
-            indexSha = null
-          } else {
-            throw err
-          }
-        }
-
-        const fileName = path.split('/').pop() || `${s}.html`
-        const entryTemplate = loadIndexEntryTemplate()
-        const indexResult = tryUpdateIndexWithNewPost({
-          indexHtml: indexText,
-          fileName,
-          title: title.trim() || 'Untitled',
-          excerpt: excerpt.trim(),
-          category: category.trim(),
-          date: new Date().toISOString(),
-          entryTemplate,
-        })
-
-        if (!indexResult.updated) {
-          setIndexHomeBanner({
-            show: true,
-            text:
-              'Your post was published, but it was not added to index.html because the blog post markers were not found (or there are duplicates / order problems). Use Edit homepage to add <!-- BLOG-POSTS-START --> and <!-- BLOG-POSTS-END --> where you want new posts to appear.',
-          })
-        } else {
-          setIndexHomeBanner({ show: false, text: '' })
-          await upsertFile({
-            token: form.token.trim(),
-            owner: form.owner.trim(),
-            repo: form.repo.trim(),
-            path: indexPath,
-            branch: form.branch.trim() || 'main',
-            content: indexResult.indexHtml,
-            message: `Index: add ${fileName}`,
-            sha: indexSha,
-          })
-        }
-      } catch (err) {
-        const { friendly } = getFriendlyGithubError(err, 'index')
-        pushToast(
-          `${friendly} Your post file was still saved; only the homepage (index.html) could not be updated.`,
-        )
-      }
+      setIndexHomeBanner(indexHomeBanner)
+      if (indexErrorToast) pushToast(indexErrorToast)
 
       setGithubSettings({ ...form })
-      persistGithubSettings({ ...form })
+      if (!persistGithubSettings({ ...form })) {
+        pushToast(
+          'Posted to GitHub, but connection settings could not be saved in this browser (storage may be full or disabled).',
+        )
+      }
       if (publishedDraftId) {
         deleteDraft(publishedDraftId)
         refreshDrafts()
@@ -481,8 +422,13 @@ export default function App() {
 
   const handleSaveGithubSettings = useCallback(
     (form) => {
+      if (!persistGithubSettings({ ...form })) {
+        pushToast(
+          'Could not save connection settings in this browser (storage may be full or disabled). Nothing was changed.',
+        )
+        return
+      }
       setGithubSettings({ ...form })
-      persistGithubSettings({ ...form })
       pushToast('Connection settings saved in this browser. Change them anytime from Publish.')
     },
     [pushToast],
