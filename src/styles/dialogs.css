@@ -81,7 +81,28 @@
 .field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  gap: 1rem;
+  align-items: stretch;
+  margin-bottom: 0.65rem;
+}
+
+.field-row > .field {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+/* When columns have .field-help, pin inputs to the bottom so fields stay aligned. */
+.field-row:has(.field-help) > .field {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 0.25rem;
+}
+
+.field-row:has(.field-help) > .field > input,
+.field-row:has(.field-help) > .field > textarea,
+.field-row:has(.field-help) > .field > select {
+  align-self: end;
+  min-height: 2.65rem;
 }
 
 .dialog-actions {

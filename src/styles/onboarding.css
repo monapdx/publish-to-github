@@ -89,6 +89,55 @@
   margin-bottom: 0.65rem;
 }
 
+.first-run__form .field-row > .field {
+  margin-bottom: 0;
+}
+
+/* Match neo-brutalist dialog fields (first-run is not inside .dialog). */
+.first-run__form .field > input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  line-height: 1.35;
+  padding: 0.55rem 0.65rem;
+  min-height: 2.65rem;
+  border-radius: 0;
+  border: 3px solid #111;
+  background: var(--surface, #fffef5);
+  color: var(--text, #111);
+  box-shadow: 3px 3px 0 #111;
+}
+
+.first-run__form .field > input::placeholder {
+  font-weight: 600;
+  color: #6b6570;
+  opacity: 1;
+}
+
+.first-run__form .field > input:focus-visible {
+  outline: none;
+  box-shadow: 3px 3px 0 #111, 0 0 0 3px #ff3dbf;
+}
+
+.first-run__form .field > input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Tone down Chrome autofill so fields match the card (yellow wash looks “unstyled”). */
+.first-run__form .field > input:-webkit-autofill,
+.first-run__form .field > input:-webkit-autofill:hover,
+.first-run__form .field > input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text, #111);
+  caret-color: var(--text, #111);
+  box-shadow: 3px 3px 0 #111, inset 0 0 0 1000px #fffef5;
+  transition: background-color 99999s ease-out;
+}
+
 .first-run__storage-note {
   margin: 0.75rem 0 0.5rem;
   padding: 0.65rem 0.75rem;
