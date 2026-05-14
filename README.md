@@ -103,6 +103,10 @@ It’s a **tool**, not a platform.
 
 - Settings are saved in your browser (`localStorage`) when you click **Save connection settings** and the save succeeds, or after a successful publish (with a warning toast if the browser cannot store settings). The welcome screen only continues after settings save successfully.
 
+### Mobile Screenshot
+
+<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/assets/mobile.png">
+
 ### Stack
 
 - React 19, Vite 8, ESLint 9, Vitest (unit tests), DOMPurify (sanitize published HTML when opening)
