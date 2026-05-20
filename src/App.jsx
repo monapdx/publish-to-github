@@ -350,8 +350,7 @@ export default function App() {
       const publishedDraftId = draftId
       const s = slug.trim() || slugify(title) || 'post'
       const path = postRepoPath(s)
-      const { indexHomeBanner, indexErrorToast, successMessage, workflowWarning } =
-        await publishPostAndIndex({
+      const { indexHomeBanner, successMessage, workflowWarning } = await publishPostAndIndex({
         form,
         path,
         slug: s,
@@ -362,7 +361,6 @@ export default function App() {
         categoryClass: 'nb-bg-pink',
       })
       setIndexHomeBanner(indexHomeBanner)
-      if (indexErrorToast) pushToast(indexErrorToast)
       if (workflowWarning) pushToast(workflowWarning)
 
       setGithubSettings({ ...form })

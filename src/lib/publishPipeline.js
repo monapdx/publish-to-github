@@ -1,7 +1,7 @@
 import { BLOG_INDEX, postHref } from './blogPaths'
-import { getFileSha, upsertFile, validateGithubConnection } from './github'
+import { fetchRepoFileText, getFileSha, upsertFile, validateGithubConnection } from './github'
 import { getFriendlyGithubError } from './githubFriendlyMessages'
-import { tryUpdateIndexWithCard } from './blogIndex'
+import { MARKER_END, MARKER_START, tryUpdateIndexWithCard } from './blogIndex'
 import {
   PublishValidationError,
   assertNoUnreplacedPlaceholders,
@@ -12,9 +12,6 @@ import {
 } from './publishTemplates'
 import { hasUnreplacedPlaceholders } from './templatePlaceholders'
 import { bootstrapBlogSite } from './repoSiteBootstrap'
-
-const MARKER_BANNER =
-  'Post saved, but blog/index.html was not updated. Add <!-- BLOG_POSTS_START --> and <!-- BLOG_POSTS_END --> around your post cards.'
 
 export async function publishPostAndIndex({
   form,
@@ -49,7 +46,7 @@ export async function publishPostAndIndex({
     slug: slugInput,
   })
 
-  const site = await bootstrapBlogSite({ token, owner, repo, branch })
+  await bootstrapBlogSite({ token, owner, repo, branch })
 
   const templateData = buildPublishTemplateData({
     title: safeTitle,
@@ -64,8 +61,8 @@ export async function publishPostAndIndex({
   const cardHtml = renderPostCardHtml(templateData)
   assertNoUnreplacedPlaceholders(cardHtml, 'Post card template')
   assertNoUnreplacedPlaceholders(postHtml, 'Post page template')
-  const postSha = await getFileSha({ token, owner, repo, path, branch })
 
+  const postSha = await getFileSha({ token, owner, repo, path, branch })
   await upsertFile({
     token,
     owner,
@@ -77,56 +74,78 @@ export async function publishPostAndIndex({
     sha: postSha,
   })
 
-  let indexHomeBanner = { show: false, text: '' }
-  let indexErrorToast = null
-  let workflowWarning = site.workflowWarning
+  const indexPath = BLOG_INDEX
+  let indexHtml = ''
+  let indexSha = null
 
   try {
-    const indexResult = tryUpdateIndexWithCard({
-      indexHtml: site.indexText,
-      cardHtml,
-      slug: templateData.SLUG,
-      postHref: postHref(slug),
-    })
-
-    if (hasUnreplacedPlaceholders(indexResult.indexHtml)) {
-      throw new PublishValidationError(
-        'blog/index.html still contains unrendered {{placeholders}} after update.',
-      )
-    }
-
-    if (!indexResult.updated) {
-      indexHomeBanner = { show: true, text: MARKER_BANNER }
-    } else if (site.indexCreated || site.indexModified || indexResult.markersAdded) {
-      await upsertFile({
-        token,
-        owner,
-        repo,
-        path: BLOG_INDEX,
-        branch,
-        content: indexResult.indexHtml,
-        message: site.indexCreated
-          ? 'Create blog index with first post'
-          : `Index: add ${templateData.SLUG}`,
-        sha: site.indexSha,
-      })
-    }
+    const indexRes = await fetchRepoFileText({ token, owner, repo, path: indexPath, branch })
+    indexHtml = indexRes.text
+    indexSha = indexRes.sha
   } catch (err) {
-    if (err instanceof PublishValidationError) throw err
-    const { friendly } = getFriendlyGithubError(err, 'index')
-    indexErrorToast = `${friendly} Post was saved; blog/index.html was not updated.`
+    const { friendly } = getFriendlyGithubError(err, 'fetch')
+    throw new PublishValidationError(
+      `Post file was saved at ${path}, but blog/index.html could not be loaded from GitHub. ${friendly}`,
+    )
   }
 
-  let successMessage = `Published ${path} · ${site.bootstrapStatusMessage}`
+  console.log('Updating index:', indexPath)
+  console.log('Post slug:', templateData.SLUG)
+  console.log('Card HTML:', cardHtml)
+  console.log('Index contains start marker:', indexHtml.includes(MARKER_START))
+  console.log('Index contains end marker:', indexHtml.includes(MARKER_END))
+
+  const indexResult = tryUpdateIndexWithCard({
+    indexHtml,
+    cardHtml,
+    slug: templateData.SLUG,
+    postHref: postHref(slug),
+  })
+
+  if (!indexResult.updated) {
+    const reason = indexResult.reason || 'Index markers or layout could not be updated.'
+    throw new PublishValidationError(
+      `Post file was created, but blog/index.html was not updated. Reason: ${reason}`,
+    )
+  }
+
+  if (hasUnreplacedPlaceholders(indexResult.indexHtml)) {
+    throw new PublishValidationError(
+      'Post file was created, but blog/index.html still contains unrendered {{placeholders}} after update.',
+    )
+  }
+
+  await upsertFile({
+    token,
+    owner,
+    repo,
+    path: indexPath,
+    branch,
+    content: indexResult.indexHtml,
+    message: `Index: add ${templateData.SLUG}`,
+    sha: indexSha,
+  })
+
+  const site = await bootstrapBlogSite({ token, owner, repo, branch })
+
+  let successMessage = `Published ${path} · Index updated (${indexPath}) · ${indexResult.reason}`
+  if (site.bootstrapStatusMessage) {
+    successMessage += ` · ${site.bootstrapStatusMessage}`
+  }
   if (site.pagesSetupHint && site.workflowOk) {
     successMessage += ` · ${site.pagesSetupHint}`
   }
 
   return {
     successMessage,
-    workflowWarning,
+    workflowWarning: site.workflowWarning,
     workflowOk: site.workflowOk,
-    indexHomeBanner,
-    indexErrorToast,
+    postCreatedOrUpdated: true,
+    indexUpdated: true,
+    indexUpdateReason: indexResult.reason ?? 'Card inserted between BLOG_POSTS markers.',
+    indexPath,
+    postPath: path,
+    indexHomeBanner: { show: false, text: '' },
+    indexErrorToast: null,
   }
 }
