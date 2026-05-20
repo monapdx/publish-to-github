@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { buildPublishTemplateData, renderPostCardHtml, renderPostPageHtml } from '../publishTemplates'
+import {
+  POST_PAGE_TEMPLATE_MARKER,
+  buildPublishTemplateData,
+  getPostPageTemplate,
+  renderPostCardHtml,
+  renderPostPageHtml,
+} from '../publishTemplates'
+import { READ_ONLY_TEMPLATES } from '../readOnlyTemplates'
 import { replaceTemplateVars as replaceVars } from '../templateVars'
 import { tryUpdateIndexWithCard, MARKER_START, MARKER_END } from '../blogIndex'
 
@@ -12,6 +19,14 @@ const SAMPLE = {
     "You don't have to browse Github for too long before you realize that not all repos are created equally.",
   slug: 'top-five-things-i-look-for-in-github-repositories-as-a-non-coder',
 }
+
+describe('getPostPageTemplate', () => {
+  it('loads templates/post-page-template.html via READ_ONLY_TEMPLATES', () => {
+    expect(getPostPageTemplate()).toBe(READ_ONLY_TEMPLATES.postPageTemplateHtml)
+    expect(getPostPageTemplate()).toContain(POST_PAGE_TEMPLATE_MARKER)
+    expect(getPostPageTemplate()).toContain('<!DOCTYPE html>')
+  })
+})
 
 describe('replaceTemplateVars', () => {
   it('escapes title but not content', () => {
@@ -53,6 +68,7 @@ describe('sample post card', () => {
       content: '<p>Body</p>',
     })
     const page = renderPostPageHtml(data)
+    expect(page).toContain(POST_PAGE_TEMPLATE_MARKER)
     expect(page).toContain('<nav class="nb-nav">')
     expect(page).toContain('<footer class="nb-section">')
     expect(page).toContain('href="../style.css"')

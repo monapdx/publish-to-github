@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { BLOG_INDEX } from '../lib/blogPaths'
 import { DEFAULT_POST_TEMPLATE_HTML, persistPostTemplate } from '../lib/postTemplate'
+import { getPostPageTemplate } from '../lib/publishTemplates'
 import { serializePost } from '../lib/postSerializer'
 import { fetchRepoFileText } from '../lib/github'
 import { getFriendlyGithubError } from '../lib/githubFriendlyMessages'
@@ -62,8 +63,9 @@ export function PostTemplatePanel({
   }
 
   function handleReset() {
-    onHtmlChange(DEFAULT_POST_TEMPLATE_HTML)
-    persistPostTemplate(DEFAULT_POST_TEMPLATE_HTML)
+    const bundled = getPostPageTemplate()
+    onHtmlChange(bundled)
+    persistPostTemplate(bundled)
     onTemplateSaved?.('Restored default template.')
     setDetectNotes([])
     setDetectError('')
@@ -96,9 +98,10 @@ export function PostTemplatePanel({
       <div className="post-template__header">
         <h2 id="post-template-heading">Post template</h2>
         <p className="post-template__lede">
-          This app publishes to a fixed layout: <code>blog/index.html</code>, <code>blog/posts/*.html</code>, and{' '}
-          <code>blog/style.css</code>. Load your live homepage from GitHub to copy navigation, footer, and listing-card
-          markup into the per-post HTML below (<code>{'{{content}}'}</code>).
+          <strong>Publishing</strong> always uses the bundled file <code>templates/post-page-template.html</code>{' '}
+          (header, footer, <code>{'{{CONTENT}}'}</code> area). This editor is for preview and optional tweaks; it does
+          not change what gets uploaded unless you edit the repo template in the project. Load{' '}
+          <code>blog/index.html</code> from GitHub to refresh nav/footer markup here.
         </p>
       </div>
 

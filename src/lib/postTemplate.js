@@ -1,25 +1,12 @@
+/**
+ * Code-mode “post template” panel (preview + localStorage only).
+ * Publishing always uses templates/post-page-template.html via publishTemplates.js.
+ */
+import { getPostPageTemplate } from './publishTemplates'
+
 const STORAGE_KEY = 'blog-editor-post-template-html'
 
-export const DEFAULT_POST_TEMPLATE_HTML = `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{title}}</title>
-  <meta name="description" content="{{excerpt}}" />
-  <meta name="blog-editor:category" content="{{category}}" />
-  <link rel="stylesheet" href="../styles.css" />
-</head>
-<body>
-  <main class="blog-post">
-    <h1>{{title}}</h1>
-    <article>
-      {{content}}
-    </article>
-  </main>
-</body>
-</html>
-`
+export const DEFAULT_POST_TEMPLATE_HTML = getPostPageTemplate()
 
 function escapeHtml(s) {
   return String(s)
@@ -29,6 +16,7 @@ function escapeHtml(s) {
     .replaceAll('"', '&quot;')
 }
 
+/** Preview-only wrapper ({{title}} / {{content}} placeholders). Not used when publishing to GitHub. */
 export function applyPostTemplate(templateHtml, {
   title,
   content,
@@ -44,17 +32,27 @@ export function applyPostTemplate(templateHtml, {
   const safeDate = escapeHtml(date ?? '')
   return String(templateHtml)
     .replaceAll('{{title}}', safeTitle)
+    .replaceAll('{{TITLE}}', safeTitle)
     .replaceAll('{{excerpt}}', safeExcerpt)
+    .replaceAll('{{EXCERPT}}', safeExcerpt)
     .replaceAll('{{category}}', safeCategory)
+    .replaceAll('{{CATEGORY}}', safeCategory)
     .replaceAll('{{slug}}', safeSlug)
+    .replaceAll('{{SLUG}}', safeSlug)
     .replaceAll('{{date}}', safeDate)
+    .replaceAll('{{DATE}}', safeDate)
     .replaceAll('{{content}}', content ?? '')
+    .replaceAll('{{CONTENT}}', content ?? '')
 }
 
 export function loadPostTemplate() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw == null || raw.trim() === '') return DEFAULT_POST_TEMPLATE_HTML
+    // Replace stale minimal templates saved before the bundled full-page shell.
+    if (!raw.includes('nb-nav') || !raw.includes('<footer')) {
+      return DEFAULT_POST_TEMPLATE_HTML
+    }
     return raw
   } catch {
     return DEFAULT_POST_TEMPLATE_HTML
