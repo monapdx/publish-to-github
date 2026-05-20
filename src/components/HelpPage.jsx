@@ -49,14 +49,19 @@ export function HelpPage({ open, onClose }) {
           </section>
 
           <section className="help-section">
-            <h3>Homepage markers (index.html)</h3>
+            <h3>Blog index page &amp; site layout (Code view)</h3>
             <p>
-              After each publish, the app can add a short “post card” block to your <strong>homepage file</strong> (
-              <code>index.html</code> next to your posts folder). It only does this if you place two{' '}
-              <strong>marker comments</strong> in the HTML — invisible labels that do not show on the public site. New
-              posts are inserted <strong>between</strong> them (newest first). Switch to <strong>Code</strong> view and
-              use <strong>Edit homepage</strong> (next to the post template tools) to edit the file, check markers, and
-              customize the card HTML.
+              In <strong>Code</strong> view, set the <strong>blog index page</strong> path (or paste a GitHub file URL)
+              — the HTML file where new posts should appear in a list. Click <strong>Load index &amp; detect layout</strong>{' '}
+              to copy your site’s navigation, footer, styles, and listing-card markup into the post template and index
+              card template. Published posts then use the same chrome as your index page.
+            </p>
+            <p>
+              After each publish, the app can add a short “post card” block to that index file. It only does this if you
+              place two <strong>marker comments</strong> (<code>BLOG_POSTS_START</code> / <code>BLOG_POSTS_END</code>) in
+              the HTML — invisible labels that do not show on the public site. New posts are inserted right after the
+              start marker (newest first). Use <strong>Edit homepage HTML</strong>{' '}
+              to edit the file, check markers, or adjust card HTML.
             </p>
             <pre className="help-marker-snippet">{MARKER_BLOCK_SNIPPET}</pre>
           </section>

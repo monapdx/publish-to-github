@@ -376,7 +376,7 @@ export default function App() {
         content,
         excerpt,
         category,
-        postTemplateHtml,
+        categoryClass: 'nb-bg-pink',
       })
       setIndexHomeBanner(indexHomeBanner)
       if (indexErrorToast) pushToast(indexErrorToast)
@@ -402,7 +402,6 @@ export default function App() {
       content,
       excerpt,
       category,
-      postTemplateHtml,
       pushToast,
       refreshDrafts,
       handleNewDraft,
@@ -575,6 +574,11 @@ export default function App() {
               }
               onTemplateSaved={(message) => pushToast(message)}
               onEditBlogIndex={openBlogIndexEditor}
+              githubSettings={githubSettings}
+              onGithubSettingsChange={(next) => {
+                setGithubSettings(next)
+                persistGithubSettings(next)
+              }}
             />
           ) : null}
             </main>

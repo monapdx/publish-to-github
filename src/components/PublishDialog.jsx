@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { defaultGithubSettings } from '../lib/githubSettings'
 import { getFriendlyGithubError } from '../lib/githubFriendlyMessages'
+import { PublishValidationError } from '../lib/publishTemplates'
 import { GithubSettingsFields } from './GithubSettingsFields'
 
 export function PublishDialog({ open, onClose, initialSettings, onPublish, onSaveSettings }) {
@@ -41,6 +42,11 @@ export function PublishDialog({ open, onClose, initialSettings, onPublish, onSav
       await onPublish({ ...form })
       onClose()
     } catch (err) {
+      if (err instanceof PublishValidationError) {
+        setError(err.message)
+        setErrorDetail('')
+        return
+      }
       const { friendly, technical } = getFriendlyGithubError(err, 'publish')
       setError(friendly)
       setErrorDetail(technical)
@@ -68,9 +74,9 @@ export function PublishDialog({ open, onClose, initialSettings, onPublish, onSav
           <GithubSettingsFields form={form} setForm={setForm} idPrefix="publish" disabled={busy} tokenLast />
 
           <p className="dialog-hint dialog-hint--compact">
-            The page layout for new posts comes from your <strong>Post template</strong> (edit in{' '}
-            <strong>Code</strong> view — placeholders like <code>{'{{title}}'}</code> and{' '}
-            <code>{'{{content}}'}</code>).
+            Posts are built from <code>templates/post-page-template.html</code>; the blog index card uses{' '}
+            <code>templates/post-card-template.html</code> (neo-brutalist <code>nb-card</code> classes). Set the index
+            path in <strong>Code</strong> view.
           </p>
 
           {error ? <p className="dialog-error">{error}</p> : null}

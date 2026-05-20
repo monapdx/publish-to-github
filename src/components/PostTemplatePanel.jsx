@@ -1,5 +1,11 @@
+import { useCallback, useState } from 'react'
 import { DEFAULT_POST_TEMPLATE_HTML, persistPostTemplate } from '../lib/postTemplate'
 import { serializePost } from '../lib/postSerializer'
+import { fetchRepoFileText } from '../lib/github'
+import { getFriendlyGithubError } from '../lib/githubFriendlyMessages'
+import { resolveIndexPath, normalizeIndexPagePath } from '../lib/indexPagePath'
+import { detectSiteIntegration } from '../lib/siteIntegration'
+import { persistIndexEntryTemplate } from '../lib/indexEntryTemplate'
 
 export function PostTemplatePanel({
   html,
@@ -8,15 +14,86 @@ export function PostTemplatePanel({
   onPreviewBlocked,
   onTemplateSaved,
   onEditBlogIndex,
+  githubSettings,
+  onGithubSettingsChange,
 }) {
+  const [indexPageInput, setIndexPageInput] = useState(
+    () => githubSettings?.indexPagePath?.trim() || resolveIndexPath(githubSettings || {}),
+  )
+  const [detectBusy, setDetectBusy] = useState(false)
+  const [detectError, setDetectError] = useState('')
+  const [detectNotes, setDetectNotes] = useState([])
+
+  const saveIndexPagePath = useCallback(
+    (value) => {
+      const normalized = normalizeIndexPagePath(value, githubSettings?.postsPath)
+      onGithubSettingsChange?.({
+        ...githubSettings,
+        indexPagePath: value.trim() ? normalized : '',
+      })
+    },
+    [githubSettings, onGithubSettingsChange],
+  )
+
+  async function handleDetectFromGithub() {
+    const token = githubSettings?.token?.trim()
+    const owner = githubSettings?.owner?.trim()
+    const repo = githubSettings?.repo?.trim()
+    const branch = githubSettings?.branch?.trim() || 'main'
+    if (!token || !owner || !repo) {
+      setDetectError('Connect GitHub first (username, repo, and token).')
+      setDetectNotes([])
+      return
+    }
+
+    setDetectBusy(true)
+    setDetectError('')
+    setDetectNotes([])
+    try {
+      const indexPath = normalizeIndexPagePath(indexPageInput, githubSettings.postsPath)
+      saveIndexPagePath(indexPageInput)
+      setIndexPageInput(indexPath)
+
+      const { text } = await fetchRepoFileText({
+        token,
+        owner,
+        repo,
+        path: indexPath,
+        branch,
+      })
+
+      const detection = detectSiteIntegration(text, {
+        indexPagePath: indexPath,
+        postsPath: githubSettings.postsPath,
+      })
+
+      onHtmlChange(detection.postTemplate)
+      persistPostTemplate(detection.postTemplate)
+      persistIndexEntryTemplate(detection.entryTemplate)
+      setDetectNotes(detection.messages)
+      onTemplateSaved?.(
+        'Loaded the blog index from GitHub: post template now includes your nav/footer/styles; listing cards match detected markup.',
+      )
+    } catch (err) {
+      const { friendly } = getFriendlyGithubError(err, 'fetch')
+      setDetectError(friendly)
+      setDetectNotes([])
+    } finally {
+      setDetectBusy(false)
+    }
+  }
+
   function handleReset() {
     onHtmlChange(DEFAULT_POST_TEMPLATE_HTML)
     persistPostTemplate(DEFAULT_POST_TEMPLATE_HTML)
     onTemplateSaved?.('Restored default template.')
+    setDetectNotes([])
+    setDetectError('')
   }
 
   function handleSaveTemplate() {
     persistPostTemplate(html)
+    saveIndexPagePath(indexPageInput)
     onTemplateSaved?.('Post template saved. This HTML wraps every post when you publish.')
   }
 
@@ -37,21 +114,68 @@ export function PostTemplatePanel({
     window.setTimeout(() => URL.revokeObjectURL(url), 120_000)
   }
 
+  const resolvedPath = normalizeIndexPagePath(indexPageInput, githubSettings?.postsPath)
+
   return (
     <section className="post-template" aria-labelledby="post-template-heading">
       <div className="post-template__header">
-        <h2 id="post-template-heading">Post Template</h2>
+        <h2 id="post-template-heading">Post Template &amp; site layout</h2>
         <p className="post-template__lede">
-          Paste or edit a complete HTML page: site navigation, footer, linked CSS/JS, then keep{' '}
-          <code>{'{{content}}'}</code> where the post body should appear. Saved locally and used on every
-          publish (Code view only).
+          Point at your <strong>blog index page</strong> on GitHub, then load it to copy navigation, footer, styles,
+          and listing-card markup into this app. Individual posts use the full-page HTML below (with{' '}
+          <code>{'{{content}}'}</code>); new publishes are added to the index file at the path you set.
         </p>
+      </div>
+
+      <div className="post-template__integration">
+        <label className="field post-template__index-field" htmlFor="blog-index-page-path">
+          <span>Blog index page (repo path or URL)</span>
+          <span className="field-help">
+            File where new posts are listed — e.g. <code>blog/index.html</code> or a GitHub blob URL. Leave blank to use{' '}
+            <code>{resolveIndexPath(githubSettings || {})}</code> from your posts folder.
+          </span>
+          <input
+            id="blog-index-page-path"
+            type="text"
+            value={indexPageInput}
+            onChange={(e) => setIndexPageInput(e.target.value)}
+            onBlur={() => saveIndexPagePath(indexPageInput)}
+            placeholder="blog/index.html"
+            disabled={detectBusy}
+          />
+        </label>
+        <p className="post-template__resolved-path">
+          Resolves to: <code>{resolvedPath}</code>
+        </p>
+        <div className="post-template__integration-actions">
+          <button
+            type="button"
+            className="btn btn--sky"
+            onClick={() => void handleDetectFromGithub()}
+            disabled={detectBusy}
+          >
+            {detectBusy ? 'Loading from GitHub…' : 'Load index & detect layout'}
+          </button>
+          {onEditBlogIndex ? (
+            <button type="button" className="btn btn--ghost" onClick={onEditBlogIndex} disabled={detectBusy}>
+              Edit homepage HTML
+            </button>
+          ) : null}
+        </div>
+        {detectError ? <p className="dialog-error">{detectError}</p> : null}
+        {detectNotes.length > 0 ? (
+          <ul className="post-template__detect-notes">
+            {detectNotes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        ) : null}
       </div>
 
       <div className="post-template__grid">
         <div className="post-template__editor">
           <label className="field post-template__label">
-            <span>Full-page HTML</span>
+            <span>Full-page HTML (every published post)</span>
             <textarea
               className="post-template__textarea"
               value={html}
@@ -62,18 +186,13 @@ export function PostTemplatePanel({
             />
           </label>
           <div className="post-template__actions">
-            {onEditBlogIndex ? (
-              <button type="button" className="btn btn--ghost" onClick={onEditBlogIndex}>
-                Edit homepage
-              </button>
-            ) : null}
-            <button type="button" className="btn btn--ghost" onClick={handleReset}>
+            <button type="button" className="btn btn--ghost" onClick={handleReset} disabled={detectBusy}>
               Reset to Default Template
             </button>
-            <button type="button" className="btn btn--sky" onClick={handleSaveTemplate}>
+            <button type="button" className="btn btn--sky" onClick={handleSaveTemplate} disabled={detectBusy}>
               Save template
             </button>
-            <button type="button" className="btn btn--primary" onClick={handlePreview}>
+            <button type="button" className="btn btn--primary" onClick={handlePreview} disabled={detectBusy}>
               Preview Template Output
             </button>
           </div>
@@ -82,11 +201,9 @@ export function PostTemplatePanel({
         <aside id="post-template-help" className="post-template__help">
           <h3 className="post-template__help-title">Navigation &amp; footer</h3>
           <p className="post-template__help-intro">
-            Paste any HTML you use across the site—e.g. <code>&lt;nav&gt;…&lt;/nav&gt;</code>,{' '}
-            <code>&lt;header&gt;…&lt;/header&gt;</code>, <code>&lt;footer&gt;…&lt;/footer&gt;</code>. Wrap your post
-            area with <code>&lt;main&gt;</code> or similar and leave{' '}
-            <code>{'{{content}}'}</code> inside <code>&lt;article&gt;</code> (or one wrapper) so the editor output
-            appears there when published.
+            Use <strong>Load index &amp; detect layout</strong> to pull <code>&lt;nav&gt;</code>,{' '}
+            <code>&lt;header&gt;</code>, <code>&lt;footer&gt;</code>, and stylesheet links from your live index file.
+            Or paste that HTML here manually around <code>{'{{content}}'}</code> inside <code>&lt;article&gt;</code>.
           </p>
           <h3 className="post-template__help-title post-template__help-title--sub">Placeholders</h3>
           <p className="post-template__help-intro">
@@ -110,7 +227,7 @@ export function PostTemplatePanel({
               <dt>
                 <code>{'{{category}}'}</code>
               </dt>
-              <dd>Category label (shown on the blog index card&apos;s nb-label span)</dd>
+              <dd>Category label on index cards</dd>
             </div>
             <div>
               <dt>

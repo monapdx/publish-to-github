@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{TITLE}}</title>
+  <meta name="description" content="{{EXCERPT}}" />
+  <meta name="blog-editor:title" content="{{TITLE}}" />
+  <meta name="blog-editor:excerpt" content="{{EXCERPT}}" />
+  <meta name="blog-editor:category" content="{{CATEGORY}}" />
+  <link rel="stylesheet" href="{{STYLESHEET}}" />
+</head>
+<body>
+  <main class="nb-stack-md">
+    <article class="nb-card nb-stack-md blog-post" data-slug="{{SLUG}}">
+      <span class="nb-label {{CATEGORY_CLASS}}">{{CATEGORY}}</span>
+      <h1>{{TITLE}}</h1>
+      <p class="post-date">{{DATE}}</p>
+
+      <div class="post-content nb-stack-sm">
+        {{CONTENT}}
+      </div>
+    </article>
+  </main>
+</body>
+</html>

@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  MARKER_START,
-  MARKER_END,
-  analyzeIndexMarkers,
-  tryUpdateIndexWithNewPost,
-} from '../blogIndex'
-import { DEFAULT_INDEX_ENTRY_TEMPLATE } from '../indexEntryTemplate'
+import { MARKER_START, MARKER_END, analyzeIndexMarkers, tryUpdateIndexWithCard } from '../blogIndex'
 
 describe('analyzeIndexMarkers', () => {
   it('returns missing when no markers', () => {
@@ -13,7 +7,7 @@ describe('analyzeIndexMarkers', () => {
     expect(r.kind).toBe('missing')
   })
 
-  it('returns ok for a single new marker pair in order', () => {
+  it('returns ok for BLOG_POSTS underscore markers', () => {
     const html = `<div>
 ${MARKER_START}
 ${MARKER_END}
@@ -21,8 +15,8 @@ ${MARKER_END}
     const r = analyzeIndexMarkers(html)
     expect(r.kind).toBe('ok')
     if (r.kind === 'ok') {
-      expect(r.startStr).toBe(MARKER_START)
-      expect(r.endStr).toBe(MARKER_END)
+      expect(r.startStr).toBe('<!-- BLOG_POSTS_START -->')
+      expect(r.endStr).toBe('<!-- BLOG_POSTS_END -->')
       expect(r.endIdx).toBeGreaterThan(r.startIdx)
     }
   })
@@ -34,31 +28,23 @@ ${MARKER_END}
   })
 })
 
-describe('tryUpdateIndexWithNewPost', () => {
-  it('prepends a new entry and keeps existing cards', () => {
-    const inner = `<article class="old"><h2><a href="old.html">Old</a></h2></article>`
+describe('tryUpdateIndexWithCard', () => {
+  it('prepends a new card and keeps existing cards', () => {
+    const inner = `<article class="nb-card" data-slug="old"><h3><a href="old.html">Old</a></h3></article>`
     const indexHtml = `<!doctype html><body>${MARKER_START}\n${inner}\n${MARKER_END}</body></html>`
-    const r = tryUpdateIndexWithNewPost({
-      indexHtml,
-      fileName: 'new-post.html',
-      title: 'New',
-      excerpt: 'Ex',
-      date: '2026-01-01T12:00:00.000Z',
-      category: 'Cat',
-      entryTemplate: DEFAULT_INDEX_ENTRY_TEMPLATE,
-    })
+    const card = `<article class="nb-card nb-stack-sm" data-slug="new-post"><h3><a href="new-post.html">New</a></h3></article>`
+    const r = tryUpdateIndexWithCard({ indexHtml, cardHtml: card, slug: 'new-post' })
     expect(r.updated).toBe(true)
     expect(r.indexHtml).toContain('new-post.html')
     expect(r.indexHtml).toContain('old.html')
-    expect(r.indexHtml.indexOf('new-post.html')).toBeLessThan(r.indexHtml.indexOf('old.html'))
+    expect(r.indexHtml.indexOf('new-post')).toBeLessThan(r.indexHtml.indexOf('data-slug="old"'))
   })
 
-  it('returns updated false when markers are missing', () => {
-    const r = tryUpdateIndexWithNewPost({
-      indexHtml: '<html></html>',
-      fileName: 'x.html',
-      title: 'T',
-      entryTemplate: DEFAULT_INDEX_ENTRY_TEMPLATE,
+  it('returns updated false when markers cannot be added', () => {
+    const r = tryUpdateIndexWithCard({
+      indexHtml: '<html><body><p>no cards</p></body></html>',
+      cardHtml: '<article data-slug="x"></article>',
+      slug: 'x',
     })
     expect(r.updated).toBe(false)
   })

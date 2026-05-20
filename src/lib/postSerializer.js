@@ -75,14 +75,26 @@ export function parsePublishedHtml(html) {
 
   let content = ''
 
+  const postContent = doc.querySelector('.post-content')
+  if (postContent) {
+    const inner = postContent.innerHTML?.trim()
+    content = inner ? sanitizePublishedBodyHtml(postContent.innerHTML) : '<p></p>'
+    return { title, excerpt, category, content }
+  }
+
   const article =
+    doc.querySelector('article.blog-post') ||
     doc.querySelector('main article') ||
     doc.querySelector('article[role="article"]') ||
     doc.querySelector('[role="article"]') ||
     doc.querySelector('article')
   if (article) {
-    const inner = article.innerHTML?.trim()
-    content = inner ? sanitizePublishedBodyHtml(article.innerHTML) : '<p></p>'
+    const clone = article.cloneNode(true)
+    clone.querySelector('.nb-label')?.remove()
+    clone.querySelector('h1')?.remove()
+    clone.querySelector('.post-date')?.remove()
+    const inner = clone.innerHTML?.trim()
+    content = inner ? sanitizePublishedBodyHtml(clone.innerHTML) : '<p></p>'
     return { title, excerpt, category, content }
   }
 
