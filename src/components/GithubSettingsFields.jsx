@@ -58,7 +58,7 @@ export function GithubSettingsFields({ form, setForm, idPrefix = '', disabled = 
           type="text"
           value={form.postsPath}
           onChange={(e) => setForm((f) => ({ ...f, postsPath: e.target.value }))}
-          placeholder="blog/"
+          placeholder="blog/posts/"
           disabled={disabled}
         />
       </label>

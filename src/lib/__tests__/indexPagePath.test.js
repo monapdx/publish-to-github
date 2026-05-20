@@ -3,7 +3,7 @@ import { normalizeIndexPagePath, resolveIndexPath } from '../indexPagePath'
 
 describe('normalizeIndexPagePath', () => {
   it('uses posts folder default when empty', () => {
-    expect(normalizeIndexPagePath('', 'blog/')).toBe('blog/index.html')
+    expect(normalizeIndexPagePath('', 'blog/posts/')).toBe('blog/index.html')
   })
 
   it('parses github blob URLs', () => {

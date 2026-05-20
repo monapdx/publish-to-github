@@ -6,21 +6,26 @@ import {
   blogStylePath,
   buildPagesDeployWorkflow,
   buildStarterIndexHtml,
-  normalizeBlogDir,
+  prepareDesignIndexHtml,
   prepareExistingIndexHtml,
 } from '../repoSiteBootstrap'
+import { READ_ONLY_TEMPLATES } from '../readOnlyTemplates'
 
-describe('normalizeBlogDir', () => {
-  it('defaults to blog', () => {
-    expect(normalizeBlogDir('')).toBe('blog')
-    expect(normalizeBlogDir('blog/')).toBe('blog')
+describe('blog paths', () => {
+  it('uses blog/index.html and blog/style.css for blog/posts/', () => {
+    expect(blogIndexPath('blog/posts/')).toBe('blog/index.html')
+    expect(blogStylePath('blog/posts/')).toBe(`blog/${BLOG_STYLESHEET_FILE}`)
   })
 })
 
-describe('blog paths', () => {
-  it('uses blog/index.html and blog/style.css', () => {
-    expect(blogIndexPath('blog/')).toBe('blog/index.html')
-    expect(blogStylePath('blog/')).toBe(`blog/${BLOG_STYLESHEET_FILE}`)
+describe('prepareDesignIndexHtml', () => {
+  it('clears sample cards between markers and points stylesheet at style.css', () => {
+    const html = prepareDesignIndexHtml(READ_ONLY_TEMPLATES.indexDesignHtml, 'style.css')
+    expect(html).toContain(MARKER_START)
+    expect(html).toContain(MARKER_END)
+    expect(html).toContain('href="style.css"')
+    const between = html.split(MARKER_START)[1]?.split(MARKER_END)[0] ?? ''
+    expect(between.trim()).toBe('')
   })
 })
 

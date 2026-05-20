@@ -6,8 +6,8 @@ export function defaultGithubSettings() {
     owner: '',
     repo: '',
     branch: 'main',
-    postsPath: 'blog/',
-    /** Repo path or URL to the blog index page (e.g. blog/index.html). Empty = {postsPath}/index.html */
+    postsPath: 'blog/posts/',
+    /** Repo path or URL to the blog index page (e.g. blog/index.html). Empty = blog/index.html */
     indexPagePath: '',
   }
 }

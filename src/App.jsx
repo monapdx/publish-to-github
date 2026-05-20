@@ -15,6 +15,7 @@ import { parsePublishedHtml } from './lib/postSerializer'
 import { loadPostTemplate, persistPostTemplate } from './lib/postTemplate'
 import { fetchRepoFileText, listPostHtmlFiles } from './lib/github'
 import { publishPostAndIndex } from './lib/publishPipeline'
+import { normalizePostsPathInput } from './lib/blogPaths'
 import { PostTemplatePanel } from './components/PostTemplatePanel'
 
 const EMPTY_DOC = '<p></p>'
@@ -23,11 +24,7 @@ const BlogEditor = lazy(() =>
 )
 
 function normalizePostsPath(p) {
-  if (!p || typeof p !== 'string') return 'blog/'
-  let s = p.trim().replace(/\\/g, '/')
-  if (!s.endsWith('/')) s += '/'
-  if (!s.startsWith('/')) return s
-  return s.replace(/^\/+/, '')
+  return normalizePostsPathInput(p)
 }
 
 function buildFilePath(postsPath, slug) {

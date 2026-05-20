@@ -52,9 +52,10 @@ export function HelpPage({ open, onClose }) {
             <h3>Blog folder bootstrap (GitHub Pages)</h3>
             <p>
               On first publish, the app copies starter files from its read-only <code>templates/</code> folder into your
-              repo’s <code>blog/</code> directory: <code>index.html</code> (from <code>index-starter.html</code>),{' '}
-              <code>style.css</code>, <code>.nojekyll</code>, and <code>.github/workflows/deploy.yml</code> if those are
-              missing. It does <strong>not</strong> upload a <code>blog/templates/</code> folder. Each post is generated
+              repo’s <code>blog/</code> directory: <code>index.html</code> (from <code>templates/index.html</code>),{' '}
+              <code>style.css</code>, <code>posts/</code> (for published HTML files), <code>.nojekyll</code>, and{' '}
+              <code>.github/workflows/deploy.yml</code> if those are missing. It does <strong>not</strong> upload a{' '}
+              <code>blog/templates/</code> folder. Each post is generated
               from <code>post-page-template.html</code>; the index listing uses <code>post-card-template.html</code>.
             </p>
             <p>
@@ -166,7 +167,7 @@ export function HelpPage({ open, onClose }) {
               </li>
               <li>
                 <strong>Empty published list</strong> — Confirm the <strong>posts folder</strong> path matches your
-                repo (for example <code>blog/</code>) and that the <strong>branch</strong> is correct (often{' '}
+                repo (for example <code>blog/posts/</code>) and that the <strong>branch</strong> is correct (often{' '}
                 <code>main</code>).
               </li>
               <li>

@@ -1,7 +1,13 @@
+import {
+  postUrlForIndex,
+  resolveBlogIndexPath,
+  stylesheetHrefForPost,
+} from './blogPaths'
 import { READ_ONLY_TEMPLATES } from './readOnlyTemplates'
-import { BLOG_STYLESHEET_HREF, blogIndexPath } from './repoSiteBootstrap'
 import { replaceTemplateVars } from './templateVars'
 import { slugify } from './slugify'
+
+export { postUrlForIndex, stylesheetHrefForPost }
 
 export class PublishValidationError extends Error {
   constructor(message) {
@@ -18,27 +24,9 @@ export function getPostPageTemplate() {
   return READ_ONLY_TEMPLATES.postPageTemplateHtml
 }
 
-/** Posts live beside index.html in the blog folder (e.g. blog/post.html → style.css). */
-export function stylesheetHrefForPost(postRepoPath) {
-  void postRepoPath
-  return BLOG_STYLESHEET_HREF
-}
-
-/**
- * Href for index page links to a post (same folder → slug.html only).
- * @param {string} postRepoPath e.g. blog/my-post.html
- * @param {string} indexRepoPath e.g. blog/index.html
- */
-export function postUrlForIndex(postRepoPath, indexRepoPath) {
-  void indexRepoPath
-  return postRepoPath.split('/').pop() || `${postRepoPath}.html`
-}
-
 /** Default blog index path for a posts folder setting. */
 export function resolvePublishIndexPath(postsPath, indexPagePath) {
-  const custom = String(indexPagePath ?? '').trim()
-  if (custom) return custom.replace(/\\/g, '/').replace(/^\/+/, '')
-  return blogIndexPath(postsPath)
+  return resolveBlogIndexPath({ postsPath, indexPagePath })
 }
 
 function formatPublishDate(isoOrDate = new Date()) {

@@ -56,7 +56,6 @@ export async function publishPostAndIndex({
     repo,
     branch,
     postsPath: form.postsPath,
-    blogTitle: safeTitle,
   })
 
   const templateData = buildPublishTemplateData({

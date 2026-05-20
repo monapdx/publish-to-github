@@ -33,13 +33,14 @@ describe('sample post card', () => {
       category: SAMPLE.category,
       categoryClass: SAMPLE.categoryClass,
       content: '<p>Body</p>',
-      postRepoPath: `${SAMPLE.slug}.html`,
-      indexRepoPath: 'index.html',
+      postRepoPath: `blog/posts/${SAMPLE.slug}.html`,
+      indexRepoPath: 'blog/index.html',
     })
-    expect(data.URL).toBe(`${SAMPLE.slug}.html`)
+    expect(data.URL).toBe(`posts/${SAMPLE.slug}.html`)
+    expect(data.STYLESHEET).toBe('../style.css')
 
     const card = renderPostCardHtml(data).replace(/\s+/g, ' ').trim()
-    const expected = `<article class="nb-card nb-stack-sm" data-slug="${SAMPLE.slug}"> <span class="nb-label nb-bg-pink">Github</span> <h3><a href="${SAMPLE.slug}.html">${SAMPLE.title}</a></h3> <p>${SAMPLE.excerpt}</p> <a href="${SAMPLE.slug}.html" class="nb-btn nb-btn-green">Read Post</a> </article>`
+    const expected = `<article class="nb-card nb-stack-sm" data-slug="${SAMPLE.slug}"> <span class="nb-label nb-bg-pink">Github</span> <h3><a href="posts/${SAMPLE.slug}.html">${SAMPLE.title}</a></h3> <p>${SAMPLE.excerpt}</p> <a href="posts/${SAMPLE.slug}.html" class="nb-btn nb-btn-green">Read Post</a> </article>`
 
     expect(card).toBe(expected)
   })

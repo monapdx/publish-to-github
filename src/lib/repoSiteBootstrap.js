@@ -1,5 +1,13 @@
 import { READ_ONLY_TEMPLATES } from './readOnlyTemplates'
-import { GitHubApiError, fetchRepoFileText, getFileSha, upsertFile } from './github'
+import {
+  BLOG_ROOT_DIR,
+  DEFAULT_POSTS_PATH,
+  normalizePostsPathInput,
+  resolveBlogIndexPath,
+  resolveBlogRoot,
+  resolvePostsDirectory,
+} from './blogPaths'
+import { fetchRepoFileText, getFileSha, upsertFile } from './github'
 import { getFriendlyGithubError } from './githubFriendlyMessages'
 import {
   MARKER_END,
@@ -14,75 +22,39 @@ const LEGACY_MARKER_END = /<!--\s*BLOG_EDITOR_POSTS_END\s*-->/gi
 const LEGACY_HYPHEN_START = /<!--\s*BLOG-POSTS-START\s*-->/gi
 const LEGACY_HYPHEN_END = /<!--\s*BLOG-POSTS-END\s*-->/gi
 
-/** Repo path for the site stylesheet (copied from templates/styles.css). */
 export const BLOG_STYLESHEET_FILE = 'style.css'
 export const BLOG_STYLESHEET_HREF = 'style.css'
-
-export function normalizeBlogDir(postsPath) {
-  if (!postsPath || typeof postsPath !== 'string') return 'blog'
-  let s = postsPath.trim().replace(/\\/g, '/').replace(/^\/+/, '')
-  s = s.replace(/\/+$/, '')
-  return s || 'blog'
-}
 
 export function joinRepoPath(dir, file) {
   if (!dir) return file
   return `${dir.replace(/\/+$/, '')}/${file}`
 }
 
-export function blogIndexPath(postsPath) {
-  return joinRepoPath(normalizeBlogDir(postsPath), 'index.html')
-}
-
-export function blogStylePath(postsPath) {
-  return joinRepoPath(normalizeBlogDir(postsPath), BLOG_STYLESHEET_FILE)
-}
-
-export function blogNojekyllPath(postsPath) {
-  return joinRepoPath(normalizeBlogDir(postsPath), '.nojekyll')
-}
-
 /**
- * GitHub Actions workflow: publish the blog folder as the Pages site root.
- * @param {string} publishDirectory e.g. blog
+ * Prepare templates/index.html for blog/index.html (markers, stylesheet path, no sample card).
  */
-export function buildPagesDeployWorkflow(publishDirectory = 'blog') {
-  const dir = normalizeBlogDir(publishDirectory)
-  return `name: Deploy blog to GitHub Pages
+export function prepareDesignIndexHtml(raw, stylesheetHref = BLOG_STYLESHEET_HREF) {
+  let html = String(raw)
+  html = html.replace(LEGACY_MARKER_START, MARKER_START)
+  html = html.replace(LEGACY_MARKER_END, MARKER_END)
+  html = html.replace(LEGACY_HYPHEN_START, MARKER_START)
+  html = html.replace(LEGACY_HYPHEN_END, MARKER_END)
 
-on:
-  push:
-    branches: [main, master]
-  workflow_dispatch:
+  html = html.replace(/href\s*=\s*["']\.\.\/styles\.css["']/gi, `href="${stylesheetHref}"`)
+  html = html.replace(/href\s*=\s*["']styles\.css["']/gi, `href="${stylesheetHref}"`)
+  html = html.replace(/href\s*=\s*["']style\.css["']/gi, `href="${stylesheetHref}"`)
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+  const analysis = analyzeIndexMarkers(html)
+  if (analysis.kind === 'ok') {
+    const { startStr, startIdx, endIdx } = analysis
+    const before = html.slice(0, startIdx + startStr.length)
+    const after = html.slice(endIdx)
+    html = `${before}\n      \n${after}`
+  }
 
-concurrency:
-  group: pages
-  cancel-in-progress: true
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: \${{ steps.deploy.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: ${dir}
-      - id: deploy
-        uses: actions/deploy-pages@v4
-`
+  return html
 }
 
-/**
- * Copy templates/index-starter.html with placeholders filled (read-only source).
- */
 export function buildStarterIndexHtml(opts = {}) {
   const year = String(new Date().getFullYear())
   return replaceTemplateVars(READ_ONLY_TEMPLATES.indexStarterHtml, {
@@ -116,9 +88,6 @@ ${MARKER_END}
   return { html: `${indexHtml}\n${section}`, added: true }
 }
 
-/**
- * @param {string} indexHtml
- */
 export function prepareExistingIndexHtml(indexHtml) {
   let html = String(indexHtml)
   let markersAdded = false
@@ -162,22 +131,59 @@ async function copyIfMissing({ token, owner, repo, branch, path, content, messag
   return path
 }
 
+export function buildPagesDeployWorkflow(publishDirectory = BLOG_ROOT_DIR) {
+  const dir = resolveBlogRoot(`${publishDirectory}/`)
+  return `name: Deploy blog to GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: \${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${dir}
+      - id: deploy
+        uses: actions/deploy-pages@v4
+`
+}
+
+/** @deprecated Use resolveBlogIndexPath */
+export function blogIndexPath(postsPath) {
+  return resolveBlogIndexPath({ postsPath })
+}
+
+export function blogStylePath(postsPath) {
+  return joinRepoPath(resolveBlogRoot(postsPath), BLOG_STYLESHEET_FILE)
+}
+
+export function blogNojekyllPath(postsPath) {
+  return joinRepoPath(resolveBlogRoot(postsPath), '.nojekyll')
+}
+
+export function blogPostsDirPath(postsPath) {
+  return resolvePostsDirectory(postsPath)
+}
+
 /**
- * Bootstrap TARGET_REPO/blog for GitHub Pages: copy starters from app /templates only.
- * Does not create blog/templates/ or modify app template files.
- *
- * @returns {Promise<{
- *   blogDir: string,
- *   indexPath: string,
- *   indexText: string,
- *   indexSha: string | null,
- *   indexCreated: boolean,
- *   indexModified: boolean,
- *   markersAdded: boolean,
- *   sectionAdded: boolean,
- *   filesCreated: string[],
- *   stylesheetHref: string,
- * }>}
+ * Bootstrap /blog on the repo: index from templates/index.html, posts under /blog/posts/.
  */
 export async function bootstrapBlogSite({
   token,
@@ -185,12 +191,13 @@ export async function bootstrapBlogSite({
   repo,
   branch,
   postsPath,
-  blogTitle,
 }) {
-  const blogDir = normalizeBlogDir(postsPath)
-  const indexPath = blogIndexPath(postsPath)
+  const blogDir = resolveBlogRoot(postsPath)
+  const postsDir = resolvePostsDirectory(postsPath)
+  const indexPath = resolveBlogIndexPath({ postsPath })
   const stylePath = blogStylePath(postsPath)
   const nojekyllPath = blogNojekyllPath(postsPath)
+  const postsKeepPath = joinRepoPath(postsDir, '.gitkeep')
   const workflowPath = '.github/workflows/deploy.yml'
   const filesCreated = []
   const bootstrapWarnings = []
@@ -206,6 +213,17 @@ export async function bootstrapBlogSite({
     created: filesCreated,
   })
 
+  await copyIfMissing({
+    token,
+    owner,
+    repo,
+    branch,
+    path: postsKeepPath,
+    content: '',
+    message: 'Create blog/posts folder',
+    created: filesCreated,
+  })
+
   let indexCreated = false
   let indexModified = false
   let markersAdded = false
@@ -216,10 +234,7 @@ export async function bootstrapBlogSite({
   const existingIndexSha = await getFileSha({ token, owner, repo, path: indexPath, branch })
 
   if (!existingIndexSha) {
-    indexText = buildStarterIndexHtml({
-      blogTitle: blogTitle || 'Blog',
-      stylesheetHref: BLOG_STYLESHEET_HREF,
-    })
+    indexText = prepareDesignIndexHtml(READ_ONLY_TEMPLATES.indexDesignHtml, BLOG_STYLESHEET_HREF)
     await upsertFile({
       token,
       owner,
@@ -227,7 +242,7 @@ export async function bootstrapBlogSite({
       path: indexPath,
       branch,
       content: indexText,
-      message: 'Create blog/index.html from index-starter template',
+      message: 'Create blog/index.html from templates/index.html',
       sha: null,
     })
     filesCreated.push(indexPath)
@@ -269,12 +284,13 @@ export async function bootstrapBlogSite({
   } catch (err) {
     const { friendly } = getFriendlyGithubError(err, 'publish')
     bootstrapWarnings.push(
-      `${friendly} The blog files were still set up; you can add ${workflowPath} manually or grant Workflows (Read and write) on your fine-grained token.`,
+      `${friendly} Blog files were still set up; add ${workflowPath} manually if needed.`,
     )
   }
 
   return {
     blogDir,
+    postsDir,
     indexPath,
     indexText,
     indexSha,
@@ -285,10 +301,11 @@ export async function bootstrapBlogSite({
     filesCreated,
     bootstrapWarnings,
     stylesheetHref: BLOG_STYLESHEET_HREF,
+    postsPath: normalizePostsPathInput(postsPath),
   }
 }
 
-/** @deprecated Use bootstrapBlogSite */
+/** @deprecated */
 export async function loadOrCreateIndexHtml(args) {
   return bootstrapBlogSite(args)
 }
@@ -301,7 +318,7 @@ export function buildPublishSuccessMessage({
   markersAdded,
 }) {
   const parts = [`Published post: ${postPath}`, `Index: ${indexPath}`]
-  if (indexCreated) parts.push('(new blog/index.html)')
+  if (indexCreated) parts.push('(new blog/index.html from templates)')
   if (markersAdded) parts.push('(added post markers)')
   if (filesCreated.length > 0) {
     parts.push(`Bootstrapped: ${filesCreated.join(', ')}`)

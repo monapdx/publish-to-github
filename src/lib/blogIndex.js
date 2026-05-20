@@ -1,4 +1,5 @@
 import { applyIndexEntryTemplate } from './indexEntryTemplate'
+import { resolveBlogIndexPath } from './blogPaths'
 
 /** Primary markers (template publishing). */
 export const MARKER_START = '<!-- BLOG_POSTS_START -->'
@@ -55,16 +56,8 @@ function countSubstr(str, sub) {
   return c
 }
 
-function normalizePostsDirectory(postsPath) {
-  if (!postsPath || typeof postsPath !== 'string') return 'blog'
-  let s = postsPath.trim().replace(/\\/g, '/').replace(/^\/+/, '')
-  s = s.replace(/\/+$/, '')
-  return s || 'blog'
-}
-
 function indexPathForPostsPath(postsPath) {
-  const dir = normalizePostsDirectory(postsPath)
-  return `${dir}/index.html`
+  return resolveBlogIndexPath({ postsPath })
 }
 
 /**

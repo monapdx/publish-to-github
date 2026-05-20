@@ -95,7 +95,7 @@ It’s a **tool**, not a platform.
 
 - **Connection & publish** opens a dialog: personal access token, GitHub username, repository, branch, **posts folder** path, and shortcuts to the same help you see on first run.
 
-- Builds `blog/{slug}.html` (or your custom folder + slug) as a complete document and creates or updates the file on the branch.
+- Builds `blog/posts/{slug}.html` (or your custom posts folder + slug) as a complete document and creates or updates the file on the branch.
 
 - **Excerpt** and **category** are stored in published HTML (meta tags) when you fill them in; they are included in new publishes alongside title and body. Optional **slug** (and excerpt/category) live in a collapsible block under the title in the editor.
 

@@ -1,3 +1,5 @@
+import { resolvePostsDirectory } from './blogPaths'
+
 const API = 'https://api.github.com'
 
 export class GitHubApiError extends Error {
@@ -17,14 +19,6 @@ async function throwUnlessOk(res) {
   if (res.ok) return
   const bodyText = await res.text()
   throw new GitHubApiError(`GitHub ${res.status}: ${bodyText}`, { status: res.status, bodyText })
-}
-
-/** Normalize posts folder to a directory path (no leading slash, trailing slash optional). */
-function normalizePostsDirectory(postsPath) {
-  if (!postsPath || typeof postsPath !== 'string') return 'blog'
-  let s = postsPath.trim().replace(/\\/g, '/').replace(/^\/+/, '')
-  s = s.replace(/\/+$/, '')
-  return s || 'blog'
 }
 
 /** Encode each segment for the contents API path. */
@@ -150,7 +144,7 @@ export async function listRepoDirectory({ token, owner, repo, branch, dirPath = 
 }
 
 export async function listPostHtmlFiles({ token, owner, repo, branch, postsPath }) {
-  const dir = normalizePostsDirectory(postsPath)
+  const dir = resolvePostsDirectory(postsPath)
   const q = new URLSearchParams({ ref: branch || 'main' })
   const url = `${API}/repos/${owner}/${repo}/contents/${encodeRepoPath(dir)}?${q}`
   const res = await fetch(url, { headers: headers(token) })
