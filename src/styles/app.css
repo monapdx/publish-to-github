@@ -345,12 +345,132 @@ body {
   line-height: 1.45;
 }
 
-.post-template__integration {
+.post-template__primary {
   margin-bottom: 1rem;
   padding: 0.75rem 0.85rem;
   border: 3px solid #111;
   background: #d8f8ff;
   box-shadow: 3px 3px 0 #111;
+}
+
+.post-template__lede--muted {
+  margin-top: 0.45rem;
+  font-size: 0.78rem;
+  color: #5a5560;
+}
+
+.post-template__primary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.post-template__advanced {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.post-template__disclosure {
+  border: 3px solid #111;
+  background: #fff;
+  box-shadow: 3px 3px 0 #111;
+}
+
+.post-template__disclosure > summary {
+  cursor: pointer;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  list-style: none;
+  user-select: none;
+}
+
+.post-template__disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.post-template__disclosure > summary::before {
+  content: '▸ ';
+  font-weight: 900;
+}
+
+.post-template__disclosure[open] > summary::before {
+  content: '▾ ';
+}
+
+.post-template__disclosure-body {
+  padding: 0 0.75rem 0.75rem;
+  border-top: 2px solid #111;
+}
+
+.post-template__field-hint {
+  margin: 0.5rem 0 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #3e3a45;
+  line-height: 1.45;
+}
+
+.post-template__disclosure-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
+}
+
+.post-template__inline-hint {
+  margin: 0.45rem 0 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #2f2a35;
+}
+
+.post-template__marker-status {
+  margin: 0.5rem 0 0;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border: 2px solid #111;
+}
+
+.post-template__marker-status.is-ok {
+  background: #d4ffd4;
+}
+
+.post-template__marker-status.is-warn {
+  background: #fff3c4;
+}
+
+.post-template__snippet {
+  margin: 0.55rem 0 0;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  border: 2px solid #111;
+  background: #f5f5f5;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.post-template__placeholders-panel {
+  background: #ffd7f1;
+  margin: 0.5rem 0 0;
+  padding: 0.55rem 0.65rem;
+  border: 2px solid #111;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .post-template__index-field input {
@@ -384,12 +504,6 @@ body {
   background: #fff;
 }
 
-.post-template__integration-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
 
 .post-template__detect-notes {
   margin: 0.5rem 0 0;
@@ -404,22 +518,6 @@ body {
   margin-bottom: 0.3rem;
 }
 
-.post-template__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
-}
-
-@media (min-width: 960px) {
-  .post-template__grid {
-    grid-template-columns: minmax(0, 1.35fr) minmax(220px, 0.48fr);
-    align-items: start;
-  }
-}
-
-.post-template__editor {
-  min-width: 0;
-}
 
 .post-template__label span {
   margin-bottom: 0.35rem;
@@ -427,7 +525,7 @@ body {
 
 .post-template__textarea {
   width: 100%;
-  min-height: min(22rem, 40vh);
+  min-height: 10rem;
   resize: vertical;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.78rem;
@@ -445,40 +543,6 @@ body {
   outline-offset: 2px;
 }
 
-.post-template__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.65rem;
-}
-
-.post-template__help {
-  margin: 0;
-  padding: 0.65rem 0.75rem;
-  border: 3px solid #111;
-  background: #ffd7f1;
-  box-shadow: 3px 3px 0 #111;
-  font-size: 0.8rem;
-}
-
-.post-template__help-title {
-  margin: 0 0 0.4rem;
-  font-size: 0.82rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.post-template__help-title--sub {
-  margin-top: 0.65rem;
-}
-
-.post-template__help-intro {
-  margin: 0 0 0.55rem;
-  color: #3e3a45;
-  font-weight: 600;
-  line-height: 1.45;
-}
 
 .post-template__placeholders {
   margin: 0;

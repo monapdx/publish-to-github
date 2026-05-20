@@ -1,13 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { GitHubApiError, fetchRepoFileText, getFileSha, upsertFile } from '../lib/github'
 import { getFriendlyGithubError } from '../lib/githubFriendlyMessages'
-import { MARKER_BLOCK_SNIPPET, analyzeIndexMarkers, defaultIndexHtml } from '../lib/blogIndex'
+import { analyzeIndexMarkers, defaultIndexHtml } from '../lib/blogIndex'
 import { BLOG_INDEX } from '../lib/blogPaths'
-import {
-  DEFAULT_INDEX_ENTRY_TEMPLATE,
-  loadIndexEntryTemplate,
-  persistIndexEntryTemplate,
-} from '../lib/indexEntryTemplate'
 
 export function BlogIndexEditorDialog({ settings, onClose, onSaved }) {
   const indexPath = BLOG_INDEX
@@ -17,12 +12,9 @@ export function BlogIndexEditorDialog({ settings, onClose, onSaved }) {
   const [loadErrorDetail, setLoadErrorDetail] = useState('')
   const [busyLoad, setBusyLoad] = useState(true)
   const [busySave, setBusySave] = useState(false)
-  const [markerCheck, setMarkerCheck] = useState(null)
-  const [entryTpl, setEntryTpl] = useState(() => loadIndexEntryTemplate())
   const [saveError, setSaveError] = useState('')
   const [saveErrorDetail, setSaveErrorDetail] = useState('')
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [copyHint, setCopyHint] = useState('')
   const [baselineHtml, setBaselineHtml] = useState('')
 
   const reloadFromGithub = useCallback(async () => {
@@ -35,7 +27,6 @@ export function BlogIndexEditorDialog({ settings, onClose, onSaved }) {
     setBusyLoad(true)
     setLoadError('')
     setLoadErrorDetail('')
-    setMarkerCheck(null)
     try {
       const res = await fetchRepoFileText({ token, owner, repo, path: indexPath, branch })
       setHtml(res.text)
@@ -63,27 +54,6 @@ export function BlogIndexEditorDialog({ settings, onClose, onSaved }) {
     }, 0)
     return () => window.clearTimeout(id)
   }, [reloadFromGithub])
-
-  useEffect(() => {
-    const t = window.setTimeout(() => persistIndexEntryTemplate(entryTpl), 400)
-    return () => window.clearTimeout(t)
-  }, [entryTpl])
-
-  function runMarkerCheck() {
-    const a = analyzeIndexMarkers(html)
-    setMarkerCheck(a)
-  }
-
-  async function copyMarkers() {
-    try {
-      await navigator.clipboard.writeText(MARKER_BLOCK_SNIPPET)
-      setCopyHint('Copied to clipboard.')
-      window.setTimeout(() => setCopyHint(''), 2500)
-    } catch {
-      setCopyHint('Could not copy — select the block above and copy manually.')
-      window.setTimeout(() => setCopyHint(''), 4000)
-    }
-  }
 
   function requestSave() {
     setSaveError('')
@@ -129,7 +99,6 @@ export function BlogIndexEditorDialog({ settings, onClose, onSaved }) {
         message: `Update homepage: ${indexPath}`,
         sha,
       })
-      persistIndexEntryTemplate(entryTpl)
       const newSha = body?.content?.sha ?? null
       setRemoteSha(newSha ?? (await getFileSha({ token, owner, repo, path: indexPath, branch })))
       setBaselineHtml(html)
@@ -147,7 +116,6 @@ export function BlogIndexEditorDialog({ settings, onClose, onSaved }) {
   }
 
   const dirty = html !== baselineHtml
-  const markerOk = markerCheck ? markerCheck.kind === 'ok' : false
 
   return (
     <div className="dialog-backdrop" role="presentation" onMouseDown={onClose}>
@@ -158,11 +126,10 @@ export function BlogIndexEditorDialog({ settings, onClose, onSaved }) {
         aria-labelledby="blog-index-title"
         onMouseDown={(ev) => ev.stopPropagation()}
       >
-        <h2 id="blog-index-title">Edit homepage (index.html)</h2>
+        <h2 id="blog-index-title">Save homepage to GitHub</h2>
         <p className="dialog-hint dialog-hint--soft">
-          This is the <strong>homepage file</strong> at <code>{indexPath}</code> in your connected repo. You edit the
-          raw HTML here. <strong>Marker comments</strong> are invisible notes in the HTML that tell this app where to
-          drop new post cards after you publish.
+          Upload the full <code>{indexPath}</code> file. Marker checks and listing templates are in the Code view
+          advanced sections.
         </p>
 
         {busyLoad ? <p className="dialog-hint">Loading from GitHub…</p> : null}
@@ -179,42 +146,15 @@ export function BlogIndexEditorDialog({ settings, onClose, onSaved }) {
         ) : null}
 
         <div className="blog-index__toolbar">
-          <button type="button" className="btn btn--ghost btn--small" onClick={() => reloadFromGithub()} disabled={busyLoad || busySave}>
+          <button
+            type="button"
+            className="btn btn--ghost btn--small"
+            onClick={() => reloadFromGithub()}
+            disabled={busyLoad || busySave}
+          >
             Reload from GitHub
           </button>
-          <button type="button" className="btn btn--ghost btn--small" onClick={runMarkerCheck} disabled={busyLoad}>
-            Check for markers
-          </button>
-          <button type="button" className="btn btn--ghost btn--small" onClick={copyMarkers} disabled={busyLoad}>
-            Copy marker block
-          </button>
         </div>
-
-        {copyHint ? <p className="dialog-hint dialog-hint--compact">{copyHint}</p> : null}
-
-        <div className="blog-index__markers-help">
-          <p className="dialog-hint dialog-hint--compact">
-            To automatically add new posts to your homepage, paste these two marker comments into your{' '}
-            <code>index.html</code> where you want new posts to appear. New posts will be added <strong>between</strong>{' '}
-            them after publishing (newest first). They do not show up on the public page — they are only instructions
-            for this app.
-          </p>
-          <pre className="blog-index__snippet" aria-label="Marker block to copy">
-            {MARKER_BLOCK_SNIPPET}
-          </pre>
-        </div>
-
-        {markerCheck ? (
-          <div className={`blog-index__check ${markerOk ? 'is-ok' : 'is-warn'}`} role="status">
-            <strong>{markerOk ? 'Markers look good.' : 'Marker check'}</strong>
-            <span>
-              {' '}
-              {markerOk
-                ? 'Exactly one start and one end, in the right order.'
-                : markerCheck.message}
-            </span>
-          </div>
-        ) : null}
 
         {dirty ? (
           <p className="dialog-hint dialog-hint--compact">
@@ -226,7 +166,7 @@ export function BlogIndexEditorDialog({ settings, onClose, onSaved }) {
 
         <label className="field" htmlFor="blog-index-html">
           <span>Homepage HTML</span>
-          <span className="field-help">The full file. Saving replaces this file on GitHub for the branch you connected.</span>
+          <span className="field-help">Saving replaces this file on GitHub for the branch you connected.</span>
           <textarea
             id="blog-index-html"
             className="blog-index__textarea"
@@ -234,24 +174,6 @@ export function BlogIndexEditorDialog({ settings, onClose, onSaved }) {
             onChange={(e) => setHtml(e.target.value)}
             spellCheck={false}
             disabled={busyLoad}
-          />
-        </label>
-
-        <label className="field" htmlFor="blog-index-entry-tpl">
-          <span>Post listing template (each new post)</span>
-          <span className="field-help">
-            HTML for one post on the homepage. Placeholders:{' '}
-            <code>{'{{title}}'}</code>, <code>{'{{url}}'}</code> (link to the .html file), <code>{'{{date}}'}</code>{' '}
-            (readable date), <code>{'{{dateIso}}'}</code> (machine date), <code>{'{{excerpt}}'}</code>,{' '}
-            <code>{'{{slug}}'}</code>, <code>{'{{category}}'}</code>. Values are escaped for safety.
-          </span>
-          <textarea
-            id="blog-index-entry-tpl"
-            className="blog-index__textarea blog-index__textarea--short"
-            value={entryTpl}
-            onChange={(e) => setEntryTpl(e.target.value)}
-            spellCheck={false}
-            placeholder={DEFAULT_INDEX_ENTRY_TEMPLATE}
           />
         </label>
 
