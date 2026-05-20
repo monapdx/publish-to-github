@@ -74,6 +74,7 @@ export async function publishPostAndIndex({
 
   let indexHomeBanner = { show: false, text: '' }
   let indexErrorToast = null
+  let workflowWarning = site.workflowWarning
 
   try {
     const indexResult = tryUpdateIndexWithCard({
@@ -102,10 +103,16 @@ export async function publishPostAndIndex({
     indexErrorToast = `${friendly} Post was saved; blog/index.html was not updated.`
   }
 
-  let successMessage = `Published ${path}`
-  if (site.created.length) successMessage += ` · Bootstrapped: ${site.created.join(', ')}`
-  if (site.warnings[0]) successMessage += ` · ${site.warnings[0]}`
-  if (site.pagesSetupHint) successMessage += ` ${site.pagesSetupHint}`
+  let successMessage = `Published ${path} · ${site.bootstrapStatusMessage}`
+  if (site.pagesSetupHint && site.workflowOk) {
+    successMessage += ` · ${site.pagesSetupHint}`
+  }
 
-  return { successMessage, indexHomeBanner, indexErrorToast }
+  return {
+    successMessage,
+    workflowWarning,
+    workflowOk: site.workflowOk,
+    indexHomeBanner,
+    indexErrorToast,
+  }
 }
