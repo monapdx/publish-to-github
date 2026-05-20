@@ -40,23 +40,31 @@ export function HelpPage({ open, onClose }) {
           </section>
 
           <section className="help-section">
-            <h3>What GitHub Pages is (optional)</h3>
+            <h3>GitHub Pages (assumes you have not set it up yet)</h3>
             <p>
-              <strong>GitHub Pages</strong> is a free way GitHub can turn a repository into a simple public website. If
-              you turn Pages on for your repo, visitors can read your published HTML posts in a browser. You do not need
-              Pages for this editor to work, but many people use them together.
+              <strong>GitHub Pages</strong> turns your repository into a public website. This app assumes Pages is{' '}
+              <strong>not</strong> configured yet. On first publish it adds{' '}
+              <code>.github/workflows/deploy-blog-pages.yml</code>, which deploys the entire <code>blog/</code> folder so{' '}
+              <code>blog/index.html</code> becomes your site homepage.
+            </p>
+            <p>
+              <strong>One-time after the first publish:</strong> open your repo on GitHub → <strong>Settings</strong> →{' '}
+              <strong>Pages</strong> → under <strong>Build and deployment</strong>, set <strong>Source</strong> to{' '}
+              <strong>GitHub Actions</strong> (not “Deploy from a branch”). Then open the <strong>Actions</strong> tab and
+              run or re-run <strong>Deploy blog to GitHub Pages</strong>. Your site URL appears on the Pages settings
+              screen once the workflow succeeds.
             </p>
           </section>
 
           <section className="help-section">
-            <h3>Blog folder bootstrap (GitHub Pages)</h3>
+            <h3>Blog folder bootstrap</h3>
             <p>
               On first publish, the app copies starter files from its read-only <code>templates/</code> folder into your
               repo’s <code>blog/</code> directory: <code>index.html</code> (from <code>templates/index.html</code>),{' '}
-              <code>style.css</code>, <code>posts/</code> (for published HTML files), <code>.nojekyll</code>, and{' '}
-              <code>.github/workflows/deploy.yml</code> if those are missing. It does <strong>not</strong> upload a{' '}
-              <code>blog/templates/</code> folder. Each post is generated
-              from <code>post-page-template.html</code>; the index listing uses <code>post-card-template.html</code>.
+              <code>style.css</code>, <code>posts/</code> (for published HTML files), and <code>.nojekyll</code> if those
+              are missing. It does <strong>not</strong> upload a <code>blog/templates/</code> folder. Each post is
+              generated from <code>post-page-template.html</code>; the index listing uses{' '}
+              <code>post-card-template.html</code>.
             </p>
             <p>
               After each publish, the app can add a short “post card” block to that index file. It only does this if you
@@ -95,8 +103,8 @@ export function HelpPage({ open, onClose }) {
                     <strong>Metadata</strong>: Access <strong>Read-only</strong> (usually required to open the repo)
                   </li>
                   <li>
-                    <strong>Workflows</strong>: Access <strong>Read and write</strong> (only if you want the app to add{' '}
-                    <code>.github/workflows/deploy.yml</code> automatically)
+                    <strong>Workflows</strong>: Access <strong>Read and write</strong> (required for the app to add{' '}
+                    <code>.github/workflows/deploy-blog-pages.yml</code> automatically)
                   </li>
                 </ul>
               </li>

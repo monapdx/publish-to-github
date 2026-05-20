@@ -6,6 +6,7 @@ import {
   blogStylePath,
   buildPagesDeployWorkflow,
   buildStarterIndexHtml,
+  formatWorkflowBranch,
   prepareDesignIndexHtml,
   prepareExistingIndexHtml,
 } from '../repoSiteBootstrap'
@@ -39,11 +40,26 @@ describe('buildStarterIndexHtml', () => {
   })
 })
 
+describe('formatWorkflowBranch', () => {
+  it('quotes branch names with spaces', () => {
+    expect(formatWorkflowBranch('my branch')).toBe('"my branch"')
+    expect(formatWorkflowBranch('main')).toBe('main')
+  })
+})
+
 describe('buildPagesDeployWorkflow', () => {
-  it('uploads the blog folder as the Pages artifact', () => {
-    const yml = buildPagesDeployWorkflow('blog')
+  it('uploads blog/ as the Pages artifact and uses configure-pages', () => {
+    const yml = buildPagesDeployWorkflow('blog', 'main')
     expect(yml).toContain('path: blog')
+    expect(yml).toContain('configure-pages@v5')
     expect(yml).toContain('deploy-pages')
+    expect(yml).toContain('branches: [main]')
+    expect(yml).toContain('name: Deploy blog to GitHub Pages')
+  })
+
+  it('uses the configured branch in on.push', () => {
+    const yml = buildPagesDeployWorkflow('blog', 'develop')
+    expect(yml).toContain('branches: [develop]')
   })
 })
 

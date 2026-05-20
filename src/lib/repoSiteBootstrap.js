@@ -131,38 +131,30 @@ async function copyIfMissing({ token, owner, repo, branch, path, content, messag
   return path
 }
 
-export function buildPagesDeployWorkflow(publishDirectory = BLOG_ROOT_DIR) {
+/** Repo path for the blog GitHub Pages workflow (created on first publish if missing). */
+export const GITHUB_PAGES_WORKFLOW_PATH = '.github/workflows/deploy-blog-pages.yml'
+
+export const GITHUB_PAGES_SETUP_HINT =
+  'Enable GitHub Pages: repo Settings → Pages → Build and deployment → Source → GitHub Actions, then check the Actions tab for “Deploy blog to GitHub Pages”.'
+
+/** YAML-safe branch name for workflow `on.push.branches`. */
+export function formatWorkflowBranch(branch) {
+  const b = String(branch ?? '').trim() || 'main'
+  if (/^[a-zA-Z0-9._/-]+$/.test(b)) return b
+  return `"${b.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+}
+
+/**
+ * Workflow that publishes blog/index.html (entire blog/ folder) via GitHub Actions Pages.
+ * Assumes Pages is not configured yet — user must set Source to GitHub Actions once.
+ */
+export function buildPagesDeployWorkflow(publishDirectory = BLOG_ROOT_DIR, branch = 'main') {
   const dir = resolveBlogRoot(`${publishDirectory}/`)
-  return `name: Deploy blog to GitHub Pages
-
-on:
-  push:
-    branches: [main, master]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: \${{ steps.deploy.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: ${dir}
-      - id: deploy
-        uses: actions/deploy-pages@v4
-`
+  const branchRef = formatWorkflowBranch(branch)
+  return READ_ONLY_TEMPLATES.githubPagesWorkflowYaml.replace(/\{\{BLOG_DIR\}\}/g, dir).replace(
+    /\{\{BRANCH\}\}/g,
+    branchRef,
+  )
 }
 
 /** @deprecated Use resolveBlogIndexPath */
@@ -198,7 +190,7 @@ export async function bootstrapBlogSite({
   const stylePath = blogStylePath(postsPath)
   const nojekyllPath = blogNojekyllPath(postsPath)
   const postsKeepPath = joinRepoPath(postsDir, '.gitkeep')
-  const workflowPath = '.github/workflows/deploy.yml'
+  const workflowPath = GITHUB_PAGES_WORKFLOW_PATH
   const filesCreated = []
   const bootstrapWarnings = []
 
@@ -277,8 +269,8 @@ export async function bootstrapBlogSite({
       repo,
       branch,
       path: workflowPath,
-      content: buildPagesDeployWorkflow(blogDir),
-      message: 'Add GitHub Pages deploy workflow for blog',
+      content: buildPagesDeployWorkflow(blogDir, branch),
+      message: 'Add GitHub Pages workflow to publish blog/',
       created: filesCreated,
     })
   } catch (err) {
@@ -287,6 +279,8 @@ export async function bootstrapBlogSite({
       `${friendly} Blog files were still set up; add ${workflowPath} manually if needed.`,
     )
   }
+
+  const pagesWorkflowCreated = filesCreated.includes(workflowPath)
 
   return {
     blogDir,
@@ -300,6 +294,9 @@ export async function bootstrapBlogSite({
     sectionAdded,
     filesCreated,
     bootstrapWarnings,
+    pagesWorkflowCreated,
+    pagesWorkflowPath: workflowPath,
+    pagesSetupHint: pagesWorkflowCreated ? GITHUB_PAGES_SETUP_HINT : null,
     stylesheetHref: BLOG_STYLESHEET_HREF,
     postsPath: normalizePostsPathInput(postsPath),
   }

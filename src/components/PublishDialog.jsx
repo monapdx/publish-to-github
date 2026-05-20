@@ -74,9 +74,10 @@ export function PublishDialog({ open, onClose, initialSettings, onPublish, onSav
           <GithubSettingsFields form={form} setForm={setForm} idPrefix="publish" disabled={busy} tokenLast />
 
           <p className="dialog-hint dialog-hint--compact">
-            First publish bootstraps <code>blog/</code> on GitHub (index from templates, style.css, posts/, .nojekyll,
-            Pages workflow) from read-only app templates, then writes <code>blog/posts/your-slug.html</code> and updates{' '}
-            <code>blog/index.html</code>.
+            First publish bootstraps <code>blog/</code> and adds{' '}
+            <code>.github/workflows/deploy-blog-pages.yml</code> (publishes <code>blog/index.html</code> to GitHub Pages).
+            If Pages is not enabled yet, set Settings → Pages → Source to <strong>GitHub Actions</strong> after publish.
+            Then writes <code>blog/posts/your-slug.html</code> and updates <code>blog/index.html</code>.
           </p>
 
           {error ? <p className="dialog-error">{error}</p> : null}

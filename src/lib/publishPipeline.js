@@ -134,6 +134,9 @@ export async function publishPostAndIndex({
   if (site.bootstrapWarnings?.length) {
     successMessage += ` Note: ${site.bootstrapWarnings[0]}`
   }
+  if (site.pagesSetupHint) {
+    successMessage += ` ${site.pagesSetupHint}`
+  }
 
   return {
     path,
