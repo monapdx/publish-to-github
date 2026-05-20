@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildPublishTemplateData, renderPostCardHtml } from '../publishTemplates'
+import { buildPublishTemplateData, renderPostCardHtml, renderPostPageHtml } from '../publishTemplates'
 import { replaceTemplateVars as replaceVars } from '../templateVars'
 import { tryUpdateIndexWithCard, MARKER_START, MARKER_END } from '../blogIndex'
 
@@ -41,6 +41,24 @@ describe('sample post card', () => {
     const expected = `<article class="nb-card nb-stack-sm" data-slug="${SAMPLE.slug}"> <span class="nb-label nb-bg-pink">Github</span> <h3><a href="posts/${SAMPLE.slug}.html">${SAMPLE.title}</a></h3> <p>${SAMPLE.excerpt}</p> <a href="posts/${SAMPLE.slug}.html" class="nb-btn nb-btn-green">Read Post</a> </article>`
 
     expect(card).toBe(expected)
+  })
+
+  it('renders a full post page with index shell, stylesheet, and home links', () => {
+    const data = buildPublishTemplateData({
+      title: SAMPLE.title,
+      slug: SAMPLE.slug,
+      excerpt: SAMPLE.excerpt,
+      category: SAMPLE.category,
+      categoryClass: SAMPLE.categoryClass,
+      content: '<p>Body</p>',
+    })
+    const page = renderPostPageHtml(data)
+    expect(page).toContain('<nav class="nb-nav">')
+    expect(page).toContain('<footer class="nb-section">')
+    expect(page).toContain('href="../style.css"')
+    expect(page).toContain('href="../index.html"')
+    expect(page).toContain('class="nb-card nb-stack-md blog-post"')
+    expect(page).toContain('<p>Body</p>')
   })
 
   it('updates existing card by data-slug instead of duplicating', () => {

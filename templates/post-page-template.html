@@ -1,26 +1,70 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{TITLE}}</title>
-  <meta name="description" content="{{EXCERPT}}" />
-  <meta name="blog-editor:title" content="{{TITLE}}" />
-  <meta name="blog-editor:excerpt" content="{{EXCERPT}}" />
-  <meta name="blog-editor:category" content="{{CATEGORY}}" />
-  <link rel="stylesheet" href="{{STYLESHEET}}" />
-</head>
-<body>
-  <main class="nb-stack-md">
-    <article class="nb-card nb-stack-md blog-post" data-slug="{{SLUG}}">
-      <span class="nb-label {{CATEGORY_CLASS}}">{{CATEGORY}}</span>
-      <h1>{{TITLE}}</h1>
-      <p class="post-date">{{DATE}}</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{TITLE}}</title>
+    <meta name="description" content="{{EXCERPT}}" />
+    <meta name="blog-editor:title" content="{{TITLE}}" />
+    <meta name="blog-editor:excerpt" content="{{EXCERPT}}" />
+    <meta name="blog-editor:category" content="{{CATEGORY}}" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+    <!-- NAV (same shell as blog/index.html) -->
+    <nav class="nb-nav">
+      <div class="nb-nav-inner">
+        <div class="nb-nav-group">
+          <div class="nb-logo-stack">
+            <div class="nb-logo-top">BLOG NAME</div>
+            <div class="nb-logo-bottom">GOES HERE</div>
+          </div>
+        </div>
 
-      <div class="post-content nb-stack-sm">
-        {{CONTENT}}
+        <div class="nb-nav-group">
+          <a href="../index.html" class="nb-btn">Home</a>
+          <a href="" class="nb-btn">About</a>
+          <a href="../index.html" class="nb-btn nb-btn-pink">Blog</a>
+          <a href="#alerts" class="nb-btn">Help</a>
+        </div>
       </div>
-    </article>
-  </main>
-</body>
+    </nav>
+
+    <section class="nb-section">
+      <div class="nb-container">
+        <article class="nb-card nb-stack-md blog-post" data-slug="{{SLUG}}">
+          <span class="nb-label {{CATEGORY_CLASS}}">{{CATEGORY}}</span>
+          <h1>{{TITLE}}</h1>
+          <p class="post-date">{{DATE}}</p>
+
+          <div class="post-content nb-stack-sm">
+            {{CONTENT}}
+          </div>
+
+          <p class="nb-mt-md">
+            <a href="../index.html" class="nb-btn nb-btn-green">← Back to blog</a>
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- FOOTER (same shell as blog/index.html) -->
+    <footer class="nb-section">
+      <div class="nb-container">
+        <div class="nb-panel">
+          <div class="nb-row-between">
+            <div class="nb-stack-sm">
+              <p class="nb-mb-0"></p>
+            </div>
+
+            <div class="nb-row">
+              <a href="" class="nb-btn">GitHub</a>
+              <a href="" class="nb-btn nb-btn-yellow">Blog Editor</a>
+              <a href="" class="nb-btn nb-btn-pink">Templates</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </body>
 </html>
