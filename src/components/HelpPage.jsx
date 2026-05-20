@@ -49,12 +49,13 @@ export function HelpPage({ open, onClose }) {
           </section>
 
           <section className="help-section">
-            <h3>Blog index page &amp; site layout (Code view)</h3>
+            <h3>Blog folder bootstrap (GitHub Pages)</h3>
             <p>
-              In <strong>Code</strong> view, set the <strong>blog index page</strong> path (or paste a GitHub file URL)
-              — the HTML file where new posts should appear in a list. Click <strong>Load index &amp; detect layout</strong>{' '}
-              to copy your site’s navigation, footer, styles, and listing-card markup into the post template and index
-              card template. Published posts then use the same chrome as your index page.
+              On first publish, the app copies starter files from its read-only <code>templates/</code> folder into your
+              repo’s <code>blog/</code> directory: <code>index.html</code> (from <code>index-starter.html</code>),{' '}
+              <code>style.css</code>, <code>.nojekyll</code>, and <code>.github/workflows/deploy.yml</code> if those are
+              missing. It does <strong>not</strong> upload a <code>blog/templates/</code> folder. Each post is generated
+              from <code>post-page-template.html</code>; the index listing uses <code>post-card-template.html</code>.
             </p>
             <p>
               After each publish, the app can add a short “post card” block to that index file. It only does this if you

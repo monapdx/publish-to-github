@@ -74,9 +74,8 @@ export function PublishDialog({ open, onClose, initialSettings, onPublish, onSav
           <GithubSettingsFields form={form} setForm={setForm} idPrefix="publish" disabled={busy} tokenLast />
 
           <p className="dialog-hint dialog-hint--compact">
-            Posts are built from <code>templates/post-page-template.html</code>; the blog index card uses{' '}
-            <code>templates/post-card-template.html</code> (neo-brutalist <code>nb-card</code> classes). Set the index
-            path in <strong>Code</strong> view.
+            First publish bootstraps <code>blog/</code> on GitHub (index, style.css, .nojekyll, Pages workflow) from
+            read-only app templates, then writes <code>blog/your-slug.html</code> and updates <code>blog/index.html</code>.
           </p>
 
           {error ? <p className="dialog-error">{error}</p> : null}

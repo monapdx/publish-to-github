@@ -236,6 +236,18 @@ export function ensureBlogPostMarkers(indexHtml) {
     }
   }
 
+  const gridMatch = html.match(
+    /(<div[^>]*\bclass\s*=\s*["'][^"']*nb-grid[^"']*["'][^>]*>)([\s\S]*?)(<\/div>)/i,
+  )
+  if (gridMatch && /<article[^>]*\bnb-card\b/i.test(gridMatch[2])) {
+    const inner = gridMatch[2].trim()
+    if (!inner.includes(MARKER_START)) {
+      const wrapped = `${gridMatch[1]}\n${MARKER_START}\n${inner}\n${MARKER_END}\n${gridMatch[3]}`
+      html = html.replace(gridMatch[0], wrapped)
+      if (analyzeIndexMarkers(html).kind === 'ok') return { html, added: true }
+    }
+  }
+
   const firstCardMatch = html.match(/<article[^>]*\bnb-card\b[\s\S]*?<\/article>/i)
   if (firstCardMatch && firstCardMatch.index != null) {
     const region = firstCardMatch[0]

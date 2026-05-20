@@ -81,6 +81,32 @@ function base64ToUtf8(b64) {
  * @param {{ token: string, owner: string, repo: string, branch: string, postsPath: string }} opts
  * @returns {Promise<Array<{ name: string, path: string, sha: string }>>}
  */
+/**
+ * List files in a repo directory (non-recursive).
+ * @returns {Promise<Array<{ name: string, path: string, type: string }>>}
+ */
+function normalizeListDir(dirPath) {
+  if (!dirPath || typeof dirPath !== 'string') return ''
+  return dirPath.trim().replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '')
+}
+
+export async function listRepoDirectory({ token, owner, repo, branch, dirPath = '' }) {
+  const dir = normalizeListDir(dirPath)
+  const q = new URLSearchParams({ ref: branch || 'main' })
+  const segment = dir ? encodeRepoPath(dir) : ''
+  const url = segment
+    ? `${API}/repos/${owner}/${repo}/contents/${segment}?${q}`
+    : `${API}/repos/${owner}/${repo}/contents/?${q}`
+  const res = await fetch(url, { headers: headers(token) })
+  if (res.status === 404) return []
+  await throwUnlessOk(res)
+  const data = await res.json()
+  if (!Array.isArray(data)) return []
+  return data
+    .filter((e) => e?.name && (e.type === 'file' || e.type === 'dir'))
+    .map((e) => ({ name: e.name, path: e.path, type: e.type }))
+}
+
 export async function listPostHtmlFiles({ token, owner, repo, branch, postsPath }) {
   const dir = normalizePostsDirectory(postsPath)
   const q = new URLSearchParams({ ref: branch || 'main' })

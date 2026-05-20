@@ -1,8 +1,7 @@
-import postCardTemplateRaw from '../../templates/post-card-template.html?raw'
-import postPageTemplateRaw from '../../templates/post-page-template.html?raw'
+import { READ_ONLY_TEMPLATES } from './readOnlyTemplates'
+import { BLOG_STYLESHEET_HREF, blogIndexPath } from './repoSiteBootstrap'
 import { replaceTemplateVars } from './templateVars'
 import { slugify } from './slugify'
-import { repoPathDepth } from './indexPagePath'
 
 export class PublishValidationError extends Error {
   constructor(message) {
@@ -12,18 +11,17 @@ export class PublishValidationError extends Error {
 }
 
 export function getPostCardTemplate() {
-  return postCardTemplateRaw
+  return READ_ONLY_TEMPLATES.postCardTemplateHtml
 }
 
 export function getPostPageTemplate() {
-  return postPageTemplateRaw
+  return READ_ONLY_TEMPLATES.postPageTemplateHtml
 }
 
-/** Stylesheet path from a post file to site root (e.g. blog/post.html → ../styles.css). */
+/** Posts live beside index.html in the blog folder (e.g. blog/post.html → style.css). */
 export function stylesheetHrefForPost(postRepoPath) {
-  const depth = repoPathDepth(postRepoPath)
-  if (depth <= 0) return 'styles.css'
-  return `${'../'.repeat(depth)}styles.css`
+  void postRepoPath
+  return BLOG_STYLESHEET_HREF
 }
 
 /**
@@ -32,12 +30,15 @@ export function stylesheetHrefForPost(postRepoPath) {
  * @param {string} indexRepoPath e.g. blog/index.html
  */
 export function postUrlForIndex(postRepoPath, indexRepoPath) {
-  const postFile = postRepoPath.split('/').pop() || `${postRepoPath}.html`
-  const postDir = postRepoPath.includes('/') ? postRepoPath.replace(/\/[^/]+$/, '') : ''
-  const indexDir = indexRepoPath.includes('/') ? indexRepoPath.replace(/\/[^/]+$/, '') : ''
-  if (postDir === indexDir) return postFile
-  if (!indexDir) return postRepoPath
-  return postRepoPath
+  void indexRepoPath
+  return postRepoPath.split('/').pop() || `${postRepoPath}.html`
+}
+
+/** Default blog index path for a posts folder setting. */
+export function resolvePublishIndexPath(postsPath, indexPagePath) {
+  const custom = String(indexPagePath ?? '').trim()
+  if (custom) return custom.replace(/\\/g, '/').replace(/^\/+/, '')
+  return blogIndexPath(postsPath)
 }
 
 function formatPublishDate(isoOrDate = new Date()) {
@@ -62,6 +63,7 @@ function formatPublishDate(isoOrDate = new Date()) {
  *   postRepoPath: string,
  *   indexRepoPath: string,
  *   date?: string | Date,
+ *   stylesheetHref?: string,
  * }} input
  */
 export function buildPublishTemplateData(input) {
@@ -72,6 +74,8 @@ export function buildPublishTemplateData(input) {
   const url = postUrlForIndex(postRepoPath, indexRepoPath)
   const category = String(input.category ?? '').trim()
   const categoryClass = String(input.categoryClass ?? '').trim() || 'nb-bg-pink'
+  const stylesheet =
+    input.stylesheetHref?.trim() || stylesheetHrefForPost(postRepoPath)
 
   return {
     TITLE: title || 'Untitled',
@@ -82,7 +86,7 @@ export function buildPublishTemplateData(input) {
     CATEGORY_CLASS: categoryClass,
     EXCERPT: String(input.excerpt ?? '').trim(),
     CONTENT: input.content ?? '',
-    STYLESHEET: stylesheetHrefForPost(postRepoPath),
+    STYLESHEET: stylesheet,
   }
 }
 

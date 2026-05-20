@@ -368,7 +368,7 @@ export default function App() {
       const publishedDraftId = draftId
       const s = slug.trim() || slugify(title) || 'post'
       const path = buildFilePath(form.postsPath, s)
-      const { indexHomeBanner, indexErrorToast } = await publishPostAndIndex({
+      const { indexHomeBanner, indexErrorToast, successMessage } = await publishPostAndIndex({
         form,
         path,
         slug: s,
@@ -392,7 +392,7 @@ export default function App() {
         refreshDrafts()
         handleNewDraft()
       }
-      pushToast(`Your post was published to GitHub: ${path}`)
+      pushToast(successMessage)
       loadPublishedList().catch(() => {})
     },
     [
