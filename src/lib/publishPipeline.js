@@ -4,11 +4,13 @@ import { getFriendlyGithubError } from './githubFriendlyMessages'
 import { tryUpdateIndexWithCard } from './blogIndex'
 import {
   PublishValidationError,
+  assertNoUnreplacedPlaceholders,
   buildPublishTemplateData,
   renderPostCardHtml,
   renderPostPageHtml,
   validatePublishInputs,
 } from './publishTemplates'
+import { hasUnreplacedPlaceholders } from './templatePlaceholders'
 import { bootstrapBlogSite } from './repoSiteBootstrap'
 
 const MARKER_BANNER =
@@ -48,7 +50,8 @@ export async function publishPostAndIndex({
   })
 
   const site = await bootstrapBlogSite({ token, owner, repo, branch })
-  const data = buildPublishTemplateData({
+
+  const templateData = buildPublishTemplateData({
     title: safeTitle,
     slug,
     content: safeContent,
@@ -57,8 +60,10 @@ export async function publishPostAndIndex({
     categoryClass: categoryClass || 'nb-bg-pink',
   })
 
-  const postHtml = renderPostPageHtml(data)
-  const cardHtml = renderPostCardHtml(data)
+  const postHtml = renderPostPageHtml(templateData)
+  const cardHtml = renderPostCardHtml(templateData)
+  assertNoUnreplacedPlaceholders(cardHtml, 'Post card template')
+  assertNoUnreplacedPlaceholders(postHtml, 'Post page template')
   const postSha = await getFileSha({ token, owner, repo, path, branch })
 
   await upsertFile({
@@ -80,9 +85,15 @@ export async function publishPostAndIndex({
     const indexResult = tryUpdateIndexWithCard({
       indexHtml: site.indexText,
       cardHtml,
-      slug: data.SLUG,
+      slug: templateData.SLUG,
       postHref: postHref(slug),
     })
+
+    if (hasUnreplacedPlaceholders(indexResult.indexHtml)) {
+      throw new PublishValidationError(
+        'blog/index.html still contains unrendered {{placeholders}} after update.',
+      )
+    }
 
     if (!indexResult.updated) {
       indexHomeBanner = { show: true, text: MARKER_BANNER }
@@ -94,11 +105,14 @@ export async function publishPostAndIndex({
         path: BLOG_INDEX,
         branch,
         content: indexResult.indexHtml,
-        message: site.indexCreated ? 'Create blog index with first post' : `Index: add ${data.SLUG}`,
+        message: site.indexCreated
+          ? 'Create blog index with first post'
+          : `Index: add ${templateData.SLUG}`,
         sha: site.indexSha,
       })
     }
   } catch (err) {
+    if (err instanceof PublishValidationError) throw err
     const { friendly } = getFriendlyGithubError(err, 'index')
     indexErrorToast = `${friendly} Post was saved; blog/index.html was not updated.`
   }

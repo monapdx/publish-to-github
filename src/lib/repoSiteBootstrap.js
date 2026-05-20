@@ -110,20 +110,32 @@ async function recordFile({ token, owner, repo, branch, path, content, message, 
   fileLog.push({ path, status: 'created' })
 }
 
+const LEGACY_INDEX_MARKER_START = /<!--\s*BLOG_EDITOR_POSTS_START\s*-->/gi
+const LEGACY_INDEX_MARKER_END = /<!--\s*BLOG_EDITOR_POSTS_END\s*-->/gi
+
+function normalizeIndexMarkers(html) {
+  return String(html)
+    .replace(LEGACY_INDEX_MARKER_START, MARKER_START)
+    .replace(LEGACY_INDEX_MARKER_END, MARKER_END)
+}
+
+function clearMarkerRegion(html) {
+  let h = normalizeIndexMarkers(html)
+  const a = analyzeIndexMarkers(h)
+  if (a.kind !== 'ok') return h
+  const before = h.slice(0, a.startIdx + a.startStr.length)
+  const after = h.slice(a.endIdx)
+  return `${before}\n\n${after}`
+}
+
 function createIndexHtml() {
   let html = READ_ONLY_TEMPLATES.indexDesignHtml
   html = html.replace(/href="(?:\.\.\/)?styles\.css"/gi, 'href="style.css"')
-  const a = analyzeIndexMarkers(html)
-  if (a.kind === 'ok') {
-    const before = html.slice(0, a.startIdx + a.startStr.length)
-    const after = html.slice(a.endIdx)
-    html = `${before}\n      \n${after}`
-  }
-  return html
+  return clearMarkerRegion(html)
 }
 
 function prepareIndex(html) {
-  let h = String(html)
+  let h = normalizeIndexMarkers(String(html))
   const wrapped = ensureBlogPostMarkers(h)
   h = wrapped.html
   let modified = wrapped.added

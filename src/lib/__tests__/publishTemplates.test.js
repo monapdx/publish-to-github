@@ -49,10 +49,20 @@ describe('sample post card', () => {
       categoryClass: SAMPLE.categoryClass,
       content: '<p>Body</p>',
     })
-    expect(data.URL).toBe(`posts/${SAMPLE.slug}.html`)
-    expect(data.STYLESHEET).toBe('../style.css')
+    expect(data).toMatchObject({
+      SLUG: SAMPLE.slug,
+      URL: `posts/${SAMPLE.slug}.html`,
+      TITLE: SAMPLE.title,
+      EXCERPT: SAMPLE.excerpt,
+      CATEGORY: SAMPLE.category,
+      CATEGORY_CLASS: SAMPLE.categoryClass,
+      CONTENT: '<p>Body</p>',
+      STYLESHEET: '../style.css',
+    })
+    expect(data.DATE).toBeTruthy()
 
     const card = renderPostCardHtml(data).replace(/\s+/g, ' ').trim()
+    expect(card).not.toMatch(/\{\{[^}]+\}\}/)
     const expected = `<article class="nb-card nb-stack-sm" data-slug="${SAMPLE.slug}"> <span class="nb-label nb-bg-pink">Github</span> <h3><a href="posts/${SAMPLE.slug}.html">${SAMPLE.title}</a></h3> <p>${SAMPLE.excerpt}</p> <a href="posts/${SAMPLE.slug}.html" class="nb-btn nb-btn-green">Read Post</a> </article>`
 
     expect(card).toBe(expected)

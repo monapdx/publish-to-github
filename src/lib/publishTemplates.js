@@ -1,5 +1,6 @@
 import { POST_STYLESHEET_HREF, postHref } from './blogPaths'
 import { READ_ONLY_TEMPLATES } from './readOnlyTemplates'
+import { hasUnreplacedPlaceholders } from './templatePlaceholders'
 import { replaceTemplateVars } from './templateVars'
 import { slugify } from './slugify'
 
@@ -53,14 +54,26 @@ export function buildPublishTemplateData({ title, slug, content, excerpt, catego
 /**
  * Renders blog/posts/{slug}.html from templates/post-page-template.html only.
  */
+export function assertNoUnreplacedPlaceholders(html, context) {
+  if (hasUnreplacedPlaceholders(html)) {
+    throw new PublishValidationError(
+      `${context} was inserted without rendering placeholder data.`,
+    )
+  }
+}
+
 export function renderPostPageHtml(data) {
   const html = replaceTemplateVars(getPostPageTemplate(), data)
+  assertNoUnreplacedPlaceholders(html, 'Post page template')
   assertRenderedPostPage(html)
   return html
 }
 
+/** Renders templates/post-card-template.html — never insert the raw template into blog/index.html. */
 export function renderPostCardHtml(data) {
-  return replaceTemplateVars(getPostCardTemplate(), data)
+  const html = replaceTemplateVars(getPostCardTemplate(), data)
+  assertNoUnreplacedPlaceholders(html, 'Post card template')
+  return html
 }
 
 /** Ensures publish output used the bundled full-page template, not a stale/minimal fallback. */

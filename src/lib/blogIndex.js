@@ -1,3 +1,5 @@
+import { hasUnreplacedPlaceholders } from './templatePlaceholders'
+
 /** Primary markers for the post listing on blog/index.html */
 export const MARKER_START = '<!-- BLOG_POSTS_START -->'
 export const MARKER_END = '<!-- BLOG_POSTS_END -->'
@@ -18,8 +20,14 @@ function countSubstr(str, sub) {
   return c
 }
 
+const LEGACY_MARKER_START = '<!-- BLOG_EDITOR_POSTS_START -->'
+const LEGACY_MARKER_END = '<!-- BLOG_EDITOR_POSTS_END -->'
+
 export function analyzeIndexMarkers(html) {
-  const text = String(html ?? '')
+  let text = String(html ?? '')
+  text = text
+    .replaceAll(LEGACY_MARKER_START, MARKER_START)
+    .replaceAll(LEGACY_MARKER_END, MARKER_END)
   const nS = countSubstr(text, MARKER_START)
   const nE = countSubstr(text, MARKER_END)
 
@@ -95,6 +103,11 @@ function cardMatchesHref(block, href) {
   return new RegExp(`href\\s*=\\s*["']${escapeRegExp(href)}["']`, 'i').test(block)
 }
 
+/** Drop sample or broken cards that still contain {{TITLE}}, {{excerpt}}, etc. */
+export function isUnrenderedPlaceholderCard(block) {
+  return hasUnreplacedPlaceholders(block)
+}
+
 /** Insert or replace a post card after BLOG_POSTS_START (newest first). */
 export function tryUpdateIndexWithCard({ indexHtml, cardHtml, slug, postHref: href }) {
   const { html: withMarkers, added: markersAdded } = ensureBlogPostMarkers(indexHtml)
@@ -107,7 +120,10 @@ export function tryUpdateIndexWithCard({ indexHtml, cardHtml, slug, postHref: hr
   const { startStr, startIdx, endIdx } = analysis
   const inner = withMarkers.slice(startIdx + startStr.length, endIdx)
   const kept = extractCards(inner).filter(
-    (b) => !cardMatchesSlug(b, slug) && !(href && cardMatchesHref(b, href)),
+    (b) =>
+      !isUnrenderedPlaceholderCard(b) &&
+      !cardMatchesSlug(b, slug) &&
+      !(href && cardMatchesHref(b, href)),
   )
   const innerBody = [cardHtml.trim(), ...kept].join('\n')
   const before = withMarkers.slice(0, startIdx + startStr.length)
