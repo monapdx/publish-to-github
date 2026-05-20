@@ -35,10 +35,69 @@ export function formatBootstrapStatusMessage(fileLog) {
     .join(' · ')
 }
 
+const WORKFLOW_ENABLEMENT_RE = /enablement:\s*true\b/
+
 export function buildPagesWorkflowYaml(branch = 'main') {
   const b = String(branch ?? '').trim() || 'main'
   const branchRef = /^[a-zA-Z0-9._/-]+$/.test(b) ? b : `"${b.replace(/"/g, '\\"')}"`
   return READ_ONLY_TEMPLATES.githubPagesWorkflowYaml.replace(/\{\{BRANCH\}\}/g, branchRef)
+}
+
+export function workflowNeedsEnablementUpdate(existingYaml) {
+  return !WORKFLOW_ENABLEMENT_RE.test(String(existingYaml ?? ''))
+}
+
+async function ensurePagesWorkflow({ token, owner, repo, branch, fileLog }) {
+  const content = buildPagesWorkflowYaml(branch)
+  const existingSha = await getFileSha({ token, owner, repo, path: PAGES_WORKFLOW, branch })
+
+  if (existingSha) {
+    try {
+      const existing = await fetchRepoFileText({ token, owner, repo, path: PAGES_WORKFLOW, branch })
+      if (!workflowNeedsEnablementUpdate(existing.text)) {
+        fileLog.push({ path: PAGES_WORKFLOW, status: 'found' })
+        return { workflowOk: true, workflowWarning: null }
+      }
+      await upsertFile({
+        token,
+        owner,
+        repo,
+        path: PAGES_WORKFLOW,
+        branch,
+        content,
+        message: 'Update GitHub Pages workflow (enable Pages)',
+        sha: existing.sha,
+      })
+      fileLog.push({ path: PAGES_WORKFLOW, status: 'created' })
+      return { workflowOk: true, workflowWarning: null }
+    } catch {
+      fileLog.push({ path: PAGES_WORKFLOW, status: 'failed' })
+      return { workflowOk: false, workflowWarning: WORKFLOW_PERMISSION_WARNING }
+    }
+  }
+
+  try {
+    await upsertFile({
+      token,
+      owner,
+      repo,
+      path: PAGES_WORKFLOW,
+      branch,
+      content,
+      message: 'Add GitHub Pages workflow for blog/',
+      sha: null,
+    })
+    const verified = await getFileSha({ token, owner, repo, path: PAGES_WORKFLOW, branch })
+    if (verified) {
+      fileLog.push({ path: PAGES_WORKFLOW, status: 'created' })
+      return { workflowOk: true, workflowWarning: null }
+    }
+    fileLog.push({ path: PAGES_WORKFLOW, status: 'failed' })
+    return { workflowOk: false, workflowWarning: WORKFLOW_PERMISSION_WARNING }
+  } catch {
+    fileLog.push({ path: PAGES_WORKFLOW, status: 'failed' })
+    return { workflowOk: false, workflowWarning: WORKFLOW_PERMISSION_WARNING }
+  }
 }
 
 async function recordFile({ token, owner, repo, branch, path, content, message, fileLog }) {
@@ -152,36 +211,9 @@ export async function bootstrapBlogSite({ token, owner, repo, branch }) {
     indexModified = prep.modified
   }
 
-  // Workflow lives at repo root (.github/workflows/…), not under blog/
-  const workflowSha = await getFileSha({ token, owner, repo, path: PAGES_WORKFLOW, branch })
-  if (workflowSha) {
-    fileLog.push({ path: PAGES_WORKFLOW, status: 'found' })
-    workflowOk = true
-  } else {
-    try {
-      await upsertFile({
-        token,
-        owner,
-        repo,
-        path: PAGES_WORKFLOW,
-        branch,
-        content: buildPagesWorkflowYaml(branch),
-        message: 'Add GitHub Pages workflow for blog/',
-        sha: null,
-      })
-      const verified = await getFileSha({ token, owner, repo, path: PAGES_WORKFLOW, branch })
-      if (verified) {
-        fileLog.push({ path: PAGES_WORKFLOW, status: 'created' })
-        workflowOk = true
-      } else {
-        fileLog.push({ path: PAGES_WORKFLOW, status: 'failed' })
-        workflowWarning = WORKFLOW_PERMISSION_WARNING
-      }
-    } catch {
-      fileLog.push({ path: PAGES_WORKFLOW, status: 'failed' })
-      workflowWarning = WORKFLOW_PERMISSION_WARNING
-    }
-  }
+  const workflowResult = await ensurePagesWorkflow({ token, owner, repo, branch, fileLog })
+  workflowOk = workflowResult.workflowOk
+  workflowWarning = workflowResult.workflowWarning
 
   return {
     indexText,

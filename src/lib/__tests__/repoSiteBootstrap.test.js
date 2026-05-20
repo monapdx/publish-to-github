@@ -3,6 +3,7 @@ import { PAGES_WORKFLOW } from '../blogPaths'
 import {
   buildPagesWorkflowYaml,
   formatBootstrapStatusMessage,
+  workflowNeedsEnablementUpdate,
 } from '../repoSiteBootstrap'
 import { READ_ONLY_TEMPLATES } from '../readOnlyTemplates'
 
@@ -12,9 +13,19 @@ describe('buildPagesWorkflowYaml', () => {
     expect(yml).toContain('path: ./blog')
     expect(yml).toContain('branches: [main]')
     expect(yml).toContain('configure-pages@v5')
+    expect(yml).toContain('enablement: true')
     expect(yml).toContain('name: Upload blog artifact')
     expect(READ_ONLY_TEMPLATES.githubPagesWorkflowYaml).toContain('./blog')
     expect(PAGES_WORKFLOW).toBe('.github/workflows/deploy-blog-pages.yml')
+  })
+})
+
+describe('workflowNeedsEnablementUpdate', () => {
+  it('flags workflows without enablement: true', () => {
+    expect(workflowNeedsEnablementUpdate('uses: actions/configure-pages@v5')).toBe(true)
+    expect(
+      workflowNeedsEnablementUpdate('configure-pages@v5\n        with:\n          enablement: true'),
+    ).toBe(false)
   })
 })
 
