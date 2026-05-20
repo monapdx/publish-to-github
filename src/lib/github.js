@@ -36,12 +36,54 @@ function encodeRepoPath(path) {
     .join('/')
 }
 
+/** Trim accidental spaces/newlines when pasting a PAT. */
+export function normalizeGithubToken(token) {
+  return String(token ?? '').trim()
+}
+
 function headers(token) {
   return {
     Accept: 'application/vnd.github+json',
-    Authorization: `Bearer ${token}`,
+    Authorization: `Bearer ${normalizeGithubToken(token)}`,
     'X-GitHub-Api-Version': '2022-11-28',
   }
+}
+
+/**
+ * Verify the token can access this repo (fine-grained or classic).
+ * @throws {GitHubApiError}
+ */
+export async function validateGithubConnection({ token, owner, repo, branch }) {
+  const cleanToken = normalizeGithubToken(token)
+  const cleanOwner = String(owner ?? '').trim()
+  const cleanRepo = String(repo ?? '').trim()
+  const cleanBranch = (branch || 'main').trim() || 'main'
+
+  if (!cleanToken || !cleanOwner || !cleanRepo) {
+    throw new GitHubApiError('Missing token, owner, or repo', { status: 0 })
+  }
+
+  const repoUrl = `${API}/repos/${cleanOwner}/${cleanRepo}`
+  const repoRes = await fetch(repoUrl, { headers: headers(cleanToken) })
+  if (!repoRes.ok) {
+    const bodyText = await repoRes.text()
+    throw new GitHubApiError(`GitHub ${repoRes.status}: ${bodyText}`, {
+      status: repoRes.status,
+      bodyText,
+    })
+  }
+
+  const refUrl = `${API}/repos/${cleanOwner}/${cleanRepo}/git/ref/heads/${encodeURIComponent(cleanBranch)}`
+  const refRes = await fetch(refUrl, { headers: headers(cleanToken) })
+  if (!refRes.ok) {
+    const bodyText = await refRes.text()
+    throw new GitHubApiError(`GitHub ${refRes.status}: ${bodyText}`, {
+      status: refRes.status,
+      bodyText,
+    })
+  }
+
+  return { ok: true, token: cleanToken, owner: cleanOwner, repo: cleanRepo, branch: cleanBranch }
 }
 
 /**

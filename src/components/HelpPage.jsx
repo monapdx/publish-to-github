@@ -68,19 +68,58 @@ export function HelpPage({ open, onClose }) {
           </section>
 
           <section className="help-section">
-            <h3>How to create a token</h3>
+            <h3>Fine-grained token (recommended checklist)</h3>
             <ol className="help-list">
-              <li>Sign in at github.com.</li>
               <li>
-                Open <strong>Settings</strong> → <strong>Developer settings</strong> →{' '}
-                <strong>Personal access tokens</strong>.
+                GitHub → your profile <strong>Settings</strong> → <strong>Developer settings</strong> →{' '}
+                <strong>Personal access tokens</strong> → <strong>Fine-grained tokens</strong> →{' '}
+                <strong>Generate new token</strong>.
               </li>
               <li>
-                Create a token that can <strong>read and write repository contents</strong> for the repo you use with
-                this app. Fine-grained tokens are fine if they include contents read/write for that one repository.
+                <strong>Resource owner</strong> — pick your user account, or the <strong>organization</strong> if the
+                repo lives under an org.
               </li>
-              <li>Copy the token once and paste it into this app. GitHub will not show it again.</li>
+              <li>
+                <strong>Repository access</strong> — choose <strong>Only select repositories</strong> and select the
+                exact repo you type in this app (not “All repositories” unless you intend that).
+              </li>
+              <li>
+                <strong>Permissions → Repository permissions</strong>:
+                <ul className="help-list help-list--bullets">
+                  <li>
+                    <strong>Contents</strong>: Access <strong>Read and write</strong> (required to publish posts and
+                    blog files)
+                  </li>
+                  <li>
+                    <strong>Metadata</strong>: Access <strong>Read-only</strong> (usually required to open the repo)
+                  </li>
+                  <li>
+                    <strong>Workflows</strong>: Access <strong>Read and write</strong> (only if you want the app to add{' '}
+                    <code>.github/workflows/deploy.yml</code> automatically)
+                  </li>
+                </ul>
+              </li>
+              <li>
+                If your token can limit branches, allow the branch you enter here (often <code>main</code>).
+              </li>
+              <li>
+                Copy the token once (it starts with <code>github_pat_</code>) and paste it with no extra spaces. GitHub
+                will not show it again.
+              </li>
             </ol>
+            <p>
+              <strong>GitHub username</strong> in this app must match the repo owner: your username for personal repos,
+              or the <strong>organization name</strong> for org repos (not your personal username if the repo is under an
+              org).
+            </p>
+          </section>
+
+          <section className="help-section">
+            <h3>Classic token (alternative)</h3>
+            <p>
+              Developer settings → Personal access tokens → <strong>Tokens (classic)</strong> → generate with scope{' '}
+              <strong>repo</strong> (full control of private repositories). Paste the <code>ghp_</code> token here.
+            </p>
           </section>
 
           <section className="help-section">
@@ -120,7 +159,10 @@ export function HelpPage({ open, onClose }) {
                 already exist on GitHub.
               </li>
               <li>
-                <strong>Token errors</strong> — Paste the whole token, no spaces. Regenerate the token if it expired.
+                <strong>Token errors (401 / 403)</strong> — Paste the whole token with no spaces. For fine-grained tokens,
+                confirm <strong>Contents: Read and write</strong> on the <em>same</em> repository, correct{' '}
+                <strong>owner</strong> (org vs user), and branch name. Open the error “Details” in the Publish dialog for
+                GitHub’s exact message.
               </li>
               <li>
                 <strong>Empty published list</strong> — Confirm the <strong>posts folder</strong> path matches your

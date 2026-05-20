@@ -1,5 +1,6 @@
 import { READ_ONLY_TEMPLATES } from './readOnlyTemplates'
 import { GitHubApiError, fetchRepoFileText, getFileSha, upsertFile } from './github'
+import { getFriendlyGithubError } from './githubFriendlyMessages'
 import {
   MARKER_END,
   MARKER_START,
@@ -192,6 +193,7 @@ export async function bootstrapBlogSite({
   const nojekyllPath = blogNojekyllPath(postsPath)
   const workflowPath = '.github/workflows/deploy.yml'
   const filesCreated = []
+  const bootstrapWarnings = []
 
   await copyIfMissing({
     token,
@@ -253,16 +255,23 @@ export async function bootstrapBlogSite({
     created: filesCreated,
   })
 
-  await copyIfMissing({
-    token,
-    owner,
-    repo,
-    branch,
-    path: workflowPath,
-    content: buildPagesDeployWorkflow(blogDir),
-    message: 'Add GitHub Pages deploy workflow for blog',
-    created: filesCreated,
-  })
+  try {
+    await copyIfMissing({
+      token,
+      owner,
+      repo,
+      branch,
+      path: workflowPath,
+      content: buildPagesDeployWorkflow(blogDir),
+      message: 'Add GitHub Pages deploy workflow for blog',
+      created: filesCreated,
+    })
+  } catch (err) {
+    const { friendly } = getFriendlyGithubError(err, 'publish')
+    bootstrapWarnings.push(
+      `${friendly} The blog files were still set up; you can add ${workflowPath} manually or grant Workflows (Read and write) on your fine-grained token.`,
+    )
+  }
 
   return {
     blogDir,
@@ -274,6 +283,7 @@ export async function bootstrapBlogSite({
     markersAdded,
     sectionAdded,
     filesCreated,
+    bootstrapWarnings,
     stylesheetHref: BLOG_STYLESHEET_HREF,
   }
 }

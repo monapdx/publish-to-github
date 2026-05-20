@@ -1,7 +1,8 @@
-import { getFileSha, upsertFile } from './github'
-import { tryUpdateIndexWithCard } from './blogIndex'
+import { getFileSha, upsertFile, validateGithubConnection } from './github'
 import { getFriendlyGithubError } from './githubFriendlyMessages'
+import { tryUpdateIndexWithCard } from './blogIndex'
 import {
+  PublishValidationError,
   buildPublishTemplateData,
   renderPostCardHtml,
   renderPostPageHtml,
@@ -25,10 +26,23 @@ export async function publishPostAndIndex({
   category,
   categoryClass,
 }) {
-  const token = form.token.trim()
-  const owner = form.owner.trim()
-  const repo = form.repo.trim()
-  const branch = (form.branch || '').trim() || 'main'
+  let token = form.token.trim()
+  let owner = form.owner.trim()
+  let repo = form.repo.trim()
+  let branch = (form.branch || '').trim() || 'main'
+
+  try {
+    const validated = await validateGithubConnection({ token, owner, repo, branch })
+    token = validated.token
+    owner = validated.owner
+    repo = validated.repo
+    branch = validated.branch
+  } catch (err) {
+    const { friendly, technical } = getFriendlyGithubError(err, 'publish')
+    throw new PublishValidationError(
+      `${friendly} Open Help → “How to create a token” for fine-grained permission steps.\n\n${technical}`,
+    )
+  }
 
   const { title: safeTitle, content: safeContent, slug } = validatePublishInputs({
     title,
@@ -111,13 +125,16 @@ export async function publishPostAndIndex({
     indexErrorToast = `${friendly} Your post file was still saved; only blog/index.html could not be updated.`
   }
 
-  const successMessage = buildPublishSuccessMessage({
+  let successMessage = buildPublishSuccessMessage({
     postPath: path,
     indexPath: site.indexPath,
     indexCreated: site.indexCreated,
     filesCreated: site.filesCreated,
     markersAdded: site.markersAdded || site.sectionAdded,
   })
+  if (site.bootstrapWarnings?.length) {
+    successMessage += ` Note: ${site.bootstrapWarnings[0]}`
+  }
 
   return {
     path,
@@ -125,6 +142,7 @@ export async function publishPostAndIndex({
     indexCreated: site.indexCreated,
     indexUpdated,
     filesCreated: site.filesCreated,
+    bootstrapWarnings: site.bootstrapWarnings ?? [],
     indexHomeBanner,
     indexErrorToast,
     successMessage,

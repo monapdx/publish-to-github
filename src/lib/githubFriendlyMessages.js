@@ -20,15 +20,27 @@ export function getFriendlyGithubError(err, context = 'generic') {
   if (status === 401 || combined.includes('bad credentials')) {
     return {
       friendly:
-        'GitHub rejected your token. It may be expired, copied wrong, or missing permission to access this repository.',
+        'GitHub rejected your token. It may be expired, copied wrong, or not authorized for this repository. Fine-grained tokens must be created for the same GitHub account or organization that owns the repo.',
       technical,
     }
   }
 
   if (status === 403) {
+    const fineGrainedHint = combined.includes('github_pat')
+      ? ' Your token looks fine-grained — see Help for the exact permissions checklist.'
+      : ''
+    if (
+      combined.includes('resource not accessible') ||
+      combined.includes('permission') ||
+      combined.includes('insufficient')
+    ) {
+      return {
+        friendly: `GitHub blocked this request: the token does not have enough permission for this repository.${fineGrainedHint} For fine-grained tokens, set Repository access to this repo only, then enable: Contents (Read and write), Metadata (Read), and Workflows (Read and write) if the app should add the Pages deploy file.`,
+        technical,
+      }
+    }
     return {
-      friendly:
-        'GitHub blocked this request. Your token may not be allowed to read or write this repository.',
+      friendly: `GitHub blocked this request. Your token may not include access to this repository or branch.${fineGrainedHint}`,
       technical,
     }
   }

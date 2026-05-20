@@ -76,7 +76,8 @@ export function GithubSettingsFields({ form, setForm, idPrefix = '', disabled = 
         type="password"
         autoComplete="off"
         value={form.token}
-        onChange={(e) => setForm((f) => ({ ...f, token: e.target.value }))}
+        onChange={(e) => setForm((f) => ({ ...f, token: e.target.value.trim() }))}
+        onBlur={(e) => setForm((f) => ({ ...f, token: e.target.value.trim() }))}
         placeholder="Starts with github_pat_ or ghp_"
         disabled={disabled}
         required
