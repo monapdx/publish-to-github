@@ -6,9 +6,6 @@ export function defaultGithubSettings() {
     owner: '',
     repo: '',
     branch: 'main',
-    postsPath: 'blog/posts/',
-    /** Repo path or URL to the blog index page (e.g. blog/index.html). Empty = blog/index.html */
-    indexPagePath: '',
   }
 }
 
@@ -17,7 +14,13 @@ export function loadGithubSettings() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return defaultGithubSettings()
     const parsed = JSON.parse(raw)
-    return { ...defaultGithubSettings(), ...parsed }
+    const merged = { ...defaultGithubSettings(), ...parsed }
+    return {
+      token: merged.token ?? '',
+      owner: merged.owner ?? '',
+      repo: merged.repo ?? '',
+      branch: merged.branch ?? 'main',
+    }
   } catch {
     return defaultGithubSettings()
   }
@@ -25,7 +28,10 @@ export function loadGithubSettings() {
 
 export function persistGithubSettings(settings) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ ...defaultGithubSettings(), ...settings }),
+    )
     return true
   } catch {
     return false

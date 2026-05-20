@@ -57,14 +57,20 @@ export function HelpPage({ open, onClose }) {
           </section>
 
           <section className="help-section">
-            <h3>Blog folder bootstrap</h3>
+            <h3>Fixed blog layout (not configurable)</h3>
             <p>
-              On first publish, the app copies starter files from its read-only <code>templates/</code> folder into your
-              repo’s <code>blog/</code> directory: <code>index.html</code> (from <code>templates/index.html</code>),{' '}
-              <code>style.css</code>, <code>posts/</code> (for published HTML files), and <code>.nojekyll</code> if those
-              are missing. It does <strong>not</strong> upload a <code>blog/templates/</code> folder. Each post is
-              generated from <code>post-page-template.html</code>; the index listing uses{' '}
-              <code>post-card-template.html</code>.
+              Every repo uses the same structure — an opinionated GitHub Pages blog, not a general static-site tool:
+            </p>
+            <pre className="help-marker-snippet">{`blog/
+  index.html
+  style.css
+  .nojekyll
+  posts/
+    my-post.html`}</pre>
+            <p>
+              On first publish, starter files are copied from the app’s read-only <code>templates/</code> folder. Posts
+              always link from the homepage as <code>posts/slug.html</code> and use <code>../style.css</code>. The app does{' '}
+              <strong>not</strong> upload <code>blog/templates/</code>.
             </p>
             <p>
               After each publish, the app can add a short “post card” block to that index file. It only does this if you
@@ -148,7 +154,7 @@ export function HelpPage({ open, onClose }) {
                 Click <strong>Publish</strong>, confirm your repo details, then{' '}
                 <strong>Publish to GitHub</strong>.
               </li>
-              <li>Wait for the success message. Your file appears in the posts folder you configured.</li>
+              <li>Wait for the success message. Your file appears at <code>blog/posts/your-slug.html</code>.</li>
             </ol>
           </section>
 
@@ -174,9 +180,8 @@ export function HelpPage({ open, onClose }) {
                 GitHub’s exact message.
               </li>
               <li>
-                <strong>Empty published list</strong> — Confirm the <strong>posts folder</strong> path matches your
-                repo (for example <code>blog/posts/</code>) and that the <strong>branch</strong> is correct (often{' '}
-                <code>main</code>).
+                <strong>Empty published list</strong> — Publish once to create <code>blog/posts/</code>, or confirm the{' '}
+                <strong>branch</strong> is correct (often <code>main</code>).
               </li>
               <li>
                 <strong>Need Node.js for the Windows BAT files</strong> — Install Node from nodejs.org (LTS), then run{' '}

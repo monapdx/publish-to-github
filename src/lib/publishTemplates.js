@@ -1,13 +1,7 @@
-import {
-  postUrlForIndex,
-  resolveBlogIndexPath,
-  stylesheetHrefForPost,
-} from './blogPaths'
+import { POST_STYLESHEET_HREF, postHref } from './blogPaths'
 import { READ_ONLY_TEMPLATES } from './readOnlyTemplates'
 import { replaceTemplateVars } from './templateVars'
 import { slugify } from './slugify'
-
-export { postUrlForIndex, stylesheetHrefForPost }
 
 export class PublishValidationError extends Error {
   constructor(message) {
@@ -16,96 +10,53 @@ export class PublishValidationError extends Error {
   }
 }
 
-export function getPostCardTemplate() {
-  return READ_ONLY_TEMPLATES.postCardTemplateHtml
-}
-
-export function getPostPageTemplate() {
-  return READ_ONLY_TEMPLATES.postPageTemplateHtml
-}
-
-/** Default blog index path for a posts folder setting. */
-export function resolvePublishIndexPath(postsPath, indexPagePath) {
-  return resolveBlogIndexPath({ postsPath, indexPagePath })
-}
-
-function formatPublishDate(isoOrDate = new Date()) {
+function formatDate(d = new Date()) {
   try {
-    return new Date(isoOrDate).toLocaleString(undefined, {
-      dateStyle: 'long',
-      timeStyle: 'short',
-    })
+    return new Date(d).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })
   } catch {
-    return String(isoOrDate)
+    return String(d)
   }
 }
 
-/**
- * @param {{
- *   title: string,
- *   slug?: string,
- *   content: string,
- *   excerpt?: string,
- *   category?: string,
- *   categoryClass?: string,
- *   postRepoPath: string,
- *   indexRepoPath: string,
- *   date?: string | Date,
- *   stylesheetHref?: string,
- * }} input
- */
-export function buildPublishTemplateData(input) {
-  const title = String(input.title ?? '').trim()
-  const slug = String(input.slug ?? '').trim() || slugify(title) || 'post'
-  const postRepoPath = input.postRepoPath
-  const indexRepoPath = input.indexRepoPath
-  const url = postUrlForIndex(postRepoPath, indexRepoPath)
-  const category = String(input.category ?? '').trim()
-  const categoryClass = String(input.categoryClass ?? '').trim() || 'nb-bg-pink'
-  const stylesheet =
-    input.stylesheetHref?.trim() || stylesheetHrefForPost(postRepoPath)
+export function buildPublishTemplateData({ title, slug, content, excerpt, category, categoryClass, date }) {
+  const t = String(title ?? '').trim()
+  const s = String(slug ?? '').trim() || slugify(t) || 'post'
 
   return {
-    TITLE: title || 'Untitled',
-    SLUG: slug,
-    URL: url,
-    DATE: formatPublishDate(input.date ?? new Date()),
-    CATEGORY: category,
-    CATEGORY_CLASS: categoryClass,
-    EXCERPT: String(input.excerpt ?? '').trim(),
-    CONTENT: input.content ?? '',
-    STYLESHEET: stylesheet,
+    TITLE: t || 'Untitled',
+    SLUG: s,
+    URL: postHref(s),
+    DATE: formatDate(date ?? new Date()),
+    CATEGORY: String(category ?? '').trim(),
+    CATEGORY_CLASS: String(categoryClass ?? '').trim() || 'nb-bg-pink',
+    EXCERPT: String(excerpt ?? '').trim(),
+    CONTENT: content ?? '',
+    STYLESHEET: POST_STYLESHEET_HREF,
   }
 }
 
 export function renderPostCardHtml(data) {
-  return replaceTemplateVars(getPostCardTemplate(), data)
+  return replaceTemplateVars(READ_ONLY_TEMPLATES.postCardTemplateHtml, data)
 }
 
 export function renderPostPageHtml(data) {
-  return replaceTemplateVars(getPostPageTemplate(), data)
+  return replaceTemplateVars(READ_ONLY_TEMPLATES.postPageTemplateHtml, data)
 }
 
-/**
- * @param {{ title: string, content: string, slug?: string }} post
- */
-export function validatePublishInputs(post) {
-  const title = String(post.title ?? '').trim()
-  const content = String(post.content ?? '').trim()
-  const slug = String(post.slug ?? '').trim() || slugify(title)
+export function validatePublishInputs({ title, content, slug }) {
+  const t = String(title ?? '').trim()
+  const c = String(content ?? '').trim()
+  const s = String(slug ?? '').trim() || slugify(t)
 
-  if (!title) throw new PublishValidationError('Add a title before publishing.')
-  if (!content || content === '<p></p>') {
-    throw new PublishValidationError('Add some post content before publishing.')
+  if (!t) throw new PublishValidationError('Add a title before publishing.')
+  if (!c || c === '<p></p>') throw new PublishValidationError('Add some post content before publishing.')
+  if (!s) throw new PublishValidationError('Add a slug (or title) before publishing.')
+  if (!READ_ONLY_TEMPLATES.postCardTemplateHtml.trim()) {
+    throw new PublishValidationError('Missing post-card template.')
   }
-  if (!slug) throw new PublishValidationError('Add a slug (or title) before publishing.')
-
-  if (!getPostCardTemplate().trim()) {
-    throw new PublishValidationError('Missing templates/post-card-template.html.')
-  }
-  if (!getPostPageTemplate().trim()) {
-    throw new PublishValidationError('Missing templates/post-page-template.html.')
+  if (!READ_ONLY_TEMPLATES.postPageTemplateHtml.trim()) {
+    throw new PublishValidationError('Missing post-page template.')
   }
 
-  return { title, content, slug }
+  return { title: t, content: c, slug: s }
 }

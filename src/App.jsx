@@ -15,27 +15,13 @@ import { parsePublishedHtml } from './lib/postSerializer'
 import { loadPostTemplate, persistPostTemplate } from './lib/postTemplate'
 import { fetchRepoFileText, listPostHtmlFiles } from './lib/github'
 import { publishPostAndIndex } from './lib/publishPipeline'
-import { normalizePostsPathInput } from './lib/blogPaths'
+import { postRepoPath } from './lib/blogPaths'
 import { PostTemplatePanel } from './components/PostTemplatePanel'
 
 const EMPTY_DOC = '<p></p>'
 const BlogEditor = lazy(() =>
   import('./components/BlogEditor').then((module) => ({ default: module.BlogEditor })),
 )
-
-function normalizePostsPath(p) {
-  return normalizePostsPathInput(p)
-}
-
-function buildFilePath(postsPath, slug) {
-  const base = normalizePostsPath(postsPath)
-  const clean = String(slug || 'post')
-    .trim()
-    .replace(/\.html$/i, '')
-    .replace(/[^a-zA-Z0-9_-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-  return `${base}${clean || 'post'}.html`
-}
 
 function truncatePreview(s, max = 48) {
   const t = String(s || '').trim()
@@ -131,7 +117,6 @@ export default function App() {
         owner,
         repo,
         branch: githubSettings.branch?.trim() || 'main',
-        postsPath: githubSettings.postsPath,
       })
       setPublishedFiles([...files].sort((a, b) => a.name.localeCompare(b.name)))
     } catch (err) {
@@ -364,7 +349,7 @@ export default function App() {
     async (form) => {
       const publishedDraftId = draftId
       const s = slug.trim() || slugify(title) || 'post'
-      const path = buildFilePath(form.postsPath, s)
+      const path = postRepoPath(s)
       const { indexHomeBanner, indexErrorToast, successMessage } = await publishPostAndIndex({
         form,
         path,
@@ -572,10 +557,6 @@ export default function App() {
               onTemplateSaved={(message) => pushToast(message)}
               onEditBlogIndex={openBlogIndexEditor}
               githubSettings={githubSettings}
-              onGithubSettingsChange={(next) => {
-                setGithubSettings(next)
-                persistGithubSettings(next)
-              }}
             />
           ) : null}
             </main>

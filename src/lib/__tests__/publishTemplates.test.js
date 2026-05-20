@@ -33,8 +33,6 @@ describe('sample post card', () => {
       category: SAMPLE.category,
       categoryClass: SAMPLE.categoryClass,
       content: '<p>Body</p>',
-      postRepoPath: `blog/posts/${SAMPLE.slug}.html`,
-      indexRepoPath: 'blog/index.html',
     })
     expect(data.URL).toBe(`posts/${SAMPLE.slug}.html`)
     expect(data.STYLESHEET).toBe('../style.css')
@@ -56,11 +54,14 @@ describe('sample post card', () => {
       category: SAMPLE.category,
       categoryClass: SAMPLE.categoryClass,
       content: '<p>x</p>',
-      postRepoPath: `${SAMPLE.slug}.html`,
-      indexRepoPath: 'index.html',
     })
     const newCard = renderPostCardHtml(data)
-    const r = tryUpdateIndexWithCard({ indexHtml, cardHtml: newCard, slug: SAMPLE.slug })
+    const r = tryUpdateIndexWithCard({
+      indexHtml,
+      cardHtml: newCard,
+      slug: SAMPLE.slug,
+      postHref: `posts/${SAMPLE.slug}.html`,
+    })
     expect(r.updated).toBe(true)
     const matches = r.indexHtml.match(new RegExp(`data-slug="${existingSlug}"`, 'g'))
     expect(matches?.length).toBe(1)

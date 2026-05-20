@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { GitHubApiError, fetchRepoFileText, getFileSha, upsertFile } from '../lib/github'
 import { getFriendlyGithubError } from '../lib/githubFriendlyMessages'
 import { MARKER_BLOCK_SNIPPET, analyzeIndexMarkers, defaultIndexHtml } from '../lib/blogIndex'
-import { resolveIndexPath } from '../lib/indexPagePath'
+import { BLOG_INDEX } from '../lib/blogPaths'
 import {
   DEFAULT_INDEX_ENTRY_TEMPLATE,
   loadIndexEntryTemplate,
@@ -10,7 +10,7 @@ import {
 } from '../lib/indexEntryTemplate'
 
 export function BlogIndexEditorDialog({ settings, onClose, onSaved }) {
-  const indexPath = resolveIndexPath(settings)
+  const indexPath = BLOG_INDEX
   const [html, setHtml] = useState('')
   const [remoteSha, setRemoteSha] = useState(null)
   const [loadError, setLoadError] = useState('')

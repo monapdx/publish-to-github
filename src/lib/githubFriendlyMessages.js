@@ -66,13 +66,13 @@ export function getFriendlyGithubError(err, context = 'generic') {
     if (context === 'list') {
       return {
         friendly:
-          'The posts folder could not be opened on GitHub. Check the folder path and branch, and make sure that folder exists in your repository.',
+          'blog/posts/ could not be opened on GitHub. Publish once to create the blog folder, or check your branch.',
         technical,
       }
     }
     return {
       friendly:
-        'This repository could not be found, or the branch or path is wrong. Check your GitHub username, repository name, branch, and posts folder.',
+        'This repository could not be found, or the branch is wrong. Check your GitHub username, repository name, and branch.',
       technical,
     }
   }

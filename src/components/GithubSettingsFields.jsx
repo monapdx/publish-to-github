@@ -36,33 +36,21 @@ export function GithubSettingsFields({ form, setForm, idPrefix = '', disabled = 
     </label>
   )
 
-  const branchPostsRow = (
-    <div className="field-row">
-      <label className="field" htmlFor={id('branch')}>
-        <span>Branch</span>
-        <span className="field-help">Usually main. Must already exist on GitHub.</span>
-        <input
-          id={id('branch')}
-          type="text"
-          value={form.branch}
-          onChange={(e) => setForm((f) => ({ ...f, branch: e.target.value }))}
-          placeholder="main"
-          disabled={disabled}
-        />
-      </label>
-      <label className="field" htmlFor={id('postsPath')}>
-        <span>Posts folder</span>
-        <span className="field-help">Where HTML posts are stored in the repo (slashes like a website path).</span>
-        <input
-          id={id('postsPath')}
-          type="text"
-          value={form.postsPath}
-          onChange={(e) => setForm((f) => ({ ...f, postsPath: e.target.value }))}
-          placeholder="blog/posts/"
-          disabled={disabled}
-        />
-      </label>
-    </div>
+  const branchBlock = (
+    <label className="field" htmlFor={id('branch')}>
+      <span>Branch</span>
+      <span className="field-help">
+        Usually main. Posts are published to <code>blog/posts/</code> on this branch.
+      </span>
+      <input
+        id={id('branch')}
+        type="text"
+        value={form.branch}
+        onChange={(e) => setForm((f) => ({ ...f, branch: e.target.value }))}
+        placeholder="main"
+        disabled={disabled}
+      />
+    </label>
   )
 
   const tokenBlock = (
@@ -90,7 +78,7 @@ export function GithubSettingsFields({ form, setForm, idPrefix = '', disabled = 
       <>
         {ownerBlock}
         {repoBlock}
-        {branchPostsRow}
+        {branchBlock}
         {tokenBlock}
       </>
     )
@@ -101,7 +89,7 @@ export function GithubSettingsFields({ form, setForm, idPrefix = '', disabled = 
       {tokenBlock}
       {ownerBlock}
       {repoBlock}
-      {branchPostsRow}
+      {branchBlock}
     </>
   )
 }

@@ -1,4 +1,4 @@
-import { resolvePostsDirectory } from './blogPaths'
+import { BLOG_POSTS } from './blogPaths'
 
 const API = 'https://api.github.com'
 
@@ -114,7 +114,7 @@ function base64ToUtf8(b64) {
 
 /**
  * List HTML files in the configured posts directory (non-recursive).
- * @param {{ token: string, owner: string, repo: string, branch: string, postsPath: string }} opts
+ * @param {{ token: string, owner: string, repo: string, branch: string }} opts
  * @returns {Promise<Array<{ name: string, path: string, sha: string }>>}
  */
 /**
@@ -143,8 +143,8 @@ export async function listRepoDirectory({ token, owner, repo, branch, dirPath = 
     .map((e) => ({ name: e.name, path: e.path, type: e.type }))
 }
 
-export async function listPostHtmlFiles({ token, owner, repo, branch, postsPath }) {
-  const dir = resolvePostsDirectory(postsPath)
+export async function listPostHtmlFiles({ token, owner, repo, branch }) {
+  const dir = BLOG_POSTS
   const q = new URLSearchParams({ ref: branch || 'main' })
   const url = `${API}/repos/${owner}/${repo}/contents/${encodeRepoPath(dir)}?${q}`
   const res = await fetch(url, { headers: headers(token) })
