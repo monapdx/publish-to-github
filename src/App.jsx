@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HeaderBar } from './components/HeaderBar'
 import { ToastStack } from './components/ToastStack'
 import { HtmlEditor } from './components/HtmlEditor'
@@ -18,7 +18,12 @@ import { fetchRepoFileText, listPostHtmlFiles } from './lib/github'
 import { publishPostAndIndex } from './lib/publishPipeline'
 import { deletePublishedPost } from './lib/deletePublishedPost'
 import { PublishValidationError } from './lib/publishTemplates'
-import { postRepoPath } from './lib/blogPaths'
+import { postHref, postRepoPath } from './lib/blogPaths'
+import {
+  filterVisiblePublishedPosts,
+  pruneRecentlyDeletedSlugs,
+  withoutDeletedPost,
+} from './lib/publishedPosts'
 import { PostTemplatePanel } from './components/PostTemplatePanel'
 
 const EMPTY_DOC = '<p></p>'
@@ -57,7 +62,9 @@ export default function App() {
   const [drafts, setDrafts] = useState(() => loadDrafts())
   const [listTab, setListTab] = useState('drafts')
   const [publishedFiles, setPublishedFiles] = useState([])
+  const [recentlyDeletedSlugs, setRecentlyDeletedSlugs] = useState([])
   const [publishedLoading, setPublishedLoading] = useState(false)
+  const publishedRefreshTimeoutRef = useRef(null)
   const [publishedError, setPublishedError] = useState('')
   const [publishedErrorDetail, setPublishedErrorDetail] = useState('')
   const [helpOpen, setHelpOpen] = useState(false)
@@ -103,37 +110,61 @@ export default function App() {
     githubSettings.token?.trim() && githubSettings.owner?.trim() && githubSettings.repo?.trim(),
   )
 
-  const loadPublishedList = useCallback(async () => {
-    const token = githubSettings.token?.trim()
-    const owner = githubSettings.owner?.trim()
-    const repo = githubSettings.repo?.trim()
-    if (!token || !owner || !repo) {
-      setPublishedFiles([])
-      setPublishedLoading(false)
-      setPublishedError('')
-      setPublishedErrorDetail('')
-      return
+  const refreshPublishedPostsFromRepo = useCallback(
+    async ({ silent = false } = {}) => {
+      const token = githubSettings.token?.trim()
+      const owner = githubSettings.owner?.trim()
+      const repo = githubSettings.repo?.trim()
+      if (!token || !owner || !repo) {
+        setPublishedFiles([])
+        setPublishedLoading(false)
+        setPublishedError('')
+        setPublishedErrorDetail('')
+        return
+      }
+      if (!silent) {
+        setPublishedLoading(true)
+        setPublishedError('')
+        setPublishedErrorDetail('')
+      }
+      try {
+        const files = await listPostHtmlFiles({
+          token,
+          owner,
+          repo,
+          branch: githubSettings.branch?.trim() || 'main',
+        })
+        const sorted = [...files].sort((a, b) => a.name.localeCompare(b.name))
+        setPublishedFiles(sorted)
+        setRecentlyDeletedSlugs((prev) => pruneRecentlyDeletedSlugs(prev, sorted))
+      } catch (err) {
+        if (!silent) {
+          const { friendly, technical } = getFriendlyGithubError(err, 'list')
+          setPublishedError(friendly)
+          setPublishedErrorDetail(technical)
+          setPublishedFiles([])
+        }
+      } finally {
+        if (!silent) setPublishedLoading(false)
+      }
+    },
+    [githubSettings],
+  )
+
+  const loadPublishedList = refreshPublishedPostsFromRepo
+
+  const visiblePublishedFiles = useMemo(
+    () => filterVisiblePublishedPosts(publishedFiles, recentlyDeletedSlugs),
+    [publishedFiles, recentlyDeletedSlugs],
+  )
+
+  useEffect(() => {
+    return () => {
+      if (publishedRefreshTimeoutRef.current != null) {
+        window.clearTimeout(publishedRefreshTimeoutRef.current)
+      }
     }
-    setPublishedLoading(true)
-    setPublishedError('')
-    setPublishedErrorDetail('')
-    try {
-      const files = await listPostHtmlFiles({
-        token,
-        owner,
-        repo,
-        branch: githubSettings.branch?.trim() || 'main',
-      })
-      setPublishedFiles([...files].sort((a, b) => a.name.localeCompare(b.name)))
-    } catch (err) {
-      const { friendly, technical } = getFriendlyGithubError(err, 'list')
-      setPublishedError(friendly)
-      setPublishedErrorDetail(technical)
-      setPublishedFiles([])
-    } finally {
-      setPublishedLoading(false)
-    }
-  }, [githubSettings])
+  }, [])
 
   useEffect(() => {
     const handle = window.setTimeout(() => persistPostTemplate(postTemplateHtml), 450)
@@ -383,7 +414,9 @@ export default function App() {
           handleNewDraft()
         }
         pushToast(successMessage)
-        loadPublishedList().catch(() => {})
+        const publishedSlug = slug.trim() || slugify(title) || 'post'
+        setRecentlyDeletedSlugs((prev) => prev.filter((s) => s !== publishedSlug))
+        refreshPublishedPostsFromRepo({ silent: true }).catch(() => {})
       } finally {
         setPublishBusy(false)
       }
@@ -398,7 +431,7 @@ export default function App() {
       pushToast,
       refreshDrafts,
       handleNewDraft,
-      loadPublishedList,
+      refreshPublishedPostsFromRepo,
     ],
   )
 
@@ -409,6 +442,7 @@ export default function App() {
   const handleConfirmDeletePublished = useCallback(async () => {
     if (!canDeletePublished) return
     const deletedPath = postRepoPath(deleteSlug)
+    const deletedHref = postHref(deleteSlug)
     const hadOpenPublished = publishedSource?.path === deletedPath
     setDeleteBusy(true)
     try {
@@ -417,20 +451,37 @@ export default function App() {
         slug: deleteSlug,
       })
 
-      setPublishedFiles((files) => files.filter((f) => f.path !== deletedPath))
+      if (!result.postDeleted) {
+        pushToast(result.successMessage)
+        setDeleteConfirmOpen(false)
+        return
+      }
+
+      setRecentlyDeletedSlugs((prev) =>
+        prev.includes(deleteSlug) ? prev : [...prev, deleteSlug],
+      )
+      setPublishedFiles((files) =>
+        withoutDeletedPost(files, { slug: deleteSlug, path: deletedPath, href: deletedHref }),
+      )
+
       if (hadOpenPublished) {
         setPublishedSource(null)
         handleNewDraft()
       }
 
-      await loadPublishedList()
-
-      if (result.postDeleted && result.indexUpdated) {
-        pushToast('Deleted published post and refreshed the published list.')
-      } else {
+      pushToast('Deleted published post. GitHub Pages may take a minute to redeploy.')
+      if (!result.indexUpdated) {
         pushToast(result.successMessage)
       }
       setDeleteConfirmOpen(false)
+
+      if (publishedRefreshTimeoutRef.current != null) {
+        window.clearTimeout(publishedRefreshTimeoutRef.current)
+      }
+      publishedRefreshTimeoutRef.current = window.setTimeout(() => {
+        publishedRefreshTimeoutRef.current = null
+        refreshPublishedPostsFromRepo({ silent: true }).catch(() => {})
+      }, 5000)
     } catch (err) {
       if (err instanceof PublishValidationError) {
         pushToast(err.message)
@@ -447,7 +498,7 @@ export default function App() {
     deleteSlug,
     pushToast,
     publishedSource,
-    loadPublishedList,
+    refreshPublishedPostsFromRepo,
     handleNewDraft,
   ])
 
@@ -514,7 +565,7 @@ export default function App() {
               onOpenDraft={handleOpenDraft}
               onDeleteDraft={handleDeleteDraft}
               onNew={handleNewDraft}
-              publishedFiles={publishedFiles}
+              publishedFiles={visiblePublishedFiles}
               publishedLoading={publishedLoading}
               publishedError={publishedError}
               publishedErrorDetail={publishedErrorDetail}
