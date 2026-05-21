@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pub2Hub — Neo-Brutalist Blog Editor for GitHub</title>
+  <meta
+    name="description"
+    content="Write posts. Click publish. Done. A browser-based editor that publishes plain HTML to your GitHub repo."
+  />
+  <style>
+    :root {
+      --bg: #fffef5;
+      --text: #111;
+      --muted: #3e3a45;
+      --accent: #d3ff00;
+      --sky: #d8f8ff;
+      --pink: #ffd7f1;
+      --primary: #ff3dbf;
+      --border: 3px solid #111;
+      --shadow: 6px 6px 0 #111;
+      --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --mono: ui-monospace, "Cascadia Code", "Segoe UI Mono", Consolas, monospace;
+      --max: 52rem;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      font-size: 1rem;
+      line-height: 1.55;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 16%, #00cfff44 0, transparent 34%),
+        radial-gradient(circle at 88% 12%, #ff3dbf44 0, transparent 30%),
+        radial-gradient(circle at 80% 86%, #d3ff0066 0, transparent 28%),
+        var(--bg);
+    }
+
+    .page {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem;
+    }
+
+    header.hero {
+      border: 4px solid #111;
+      background: var(--accent);
+      box-shadow: var(--shadow);
+      padding: 1.25rem 1.35rem;
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      margin: 0 0 0.35rem;
+      font-size: clamp(1.35rem, 4vw, 1.85rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      line-height: 1.15;
+    }
+
+    .tagline {
+      margin: 0 0 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .tagline-sub {
+      margin: 0 0 1rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.45rem 0.85rem;
+      border: var(--border);
+      background: #fff;
+      color: #111;
+      font-weight: 800;
+      text-decoration: none;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      box-shadow: 3px 3px 0 #111;
+    }
+
+    .btn--primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn--sky {
+      background: #00bfff;
+      color: #fff;
+    }
+
+    .btn:hover {
+      background: var(--accent);
+      color: #111;
+    }
+
+    .btn--primary:hover,
+    .btn--sky:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 #111;
+    }
+
+    .lead {
+      margin: 1rem 0 0;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .hero-img {
+      margin-top: 1.15rem;
+      border: var(--border);
+      box-shadow: 3px 3px 0 #111;
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    section {
+      margin-bottom: 1.75rem;
+      padding-bottom: 0.25rem;
+    }
+
+    h2 {
+      margin: 0 0 0.65rem;
+      font-size: 1rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.35rem 0.55rem;
+      border: var(--border);
+      background: var(--sky);
+      box-shadow: 3px 3px 0 #111;
+      display: inline-block;
+    }
+
+    h3 {
+      margin: 1.1rem 0 0.45rem;
+      font-size: 0.92rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    p {
+      margin: 0 0 0.65rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    p strong,
+    li strong {
+      color: var(--text);
+    }
+
+    hr {
+      border: none;
+      border-top: 4px solid #111;
+      margin: 1.75rem 0;
+    }
+
+    ul,
+    ol {
+      margin: 0 0 0.75rem;
+      padding-left: 1.35rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    li {
+      margin-bottom: 0.35rem;
+    }
+
+    a {
+      color: #1a56c9;
+      font-weight: 700;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: var(--border);
+      box-shadow: 3px 3px 0 #111;
+      background: #fff;
+    }
+
+    th,
+    td {
+      border: 2px solid #111;
+      padding: 0.5rem 0.65rem;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--accent);
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      letter-spacing: 0.03em;
+    }
+
+    pre {
+      margin: 0.65rem 0 1rem;
+      padding: 0.75rem 0.85rem;
+      border: var(--border);
+      background: #fff;
+      box-shadow: 3px 3px 0 #111;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      padding: 0.1rem 0.35rem;
+      border: 2px solid #111;
+      background: var(--accent);
+    }
+
+    pre code {
+      padding: 0;
+      border: none;
+      background: transparent;
+      font-size: inherit;
+    }
+
+    figure {
+      margin: 0.85rem 0 1.1rem;
+    }
+
+    figure img {
+      max-width: 100%;
+      height: auto;
+      border: var(--border);
+      box-shadow: 3px 3px 0 #111;
+      display: block;
+      background: #fff;
+    }
+
+    figcaption {
+      margin-top: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .note {
+      padding: 0.65rem 0.8rem;
+      border: var(--border);
+      background: var(--pink);
+      box-shadow: 3px 3px 0 #111;
+      font-weight: 600;
+      color: var(--muted);
+      margin: 0.75rem 0;
+    }
+
+    .feature-grid {
+      display: grid;
+      gap: 0.65rem;
+      margin: 0.75rem 0 1rem;
+    }
+
+    @media (min-width: 640px) {
+      .feature-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .feature-card {
+      border: var(--border);
+      background: #fff;
+      box-shadow: 3px 3px 0 #111;
+      padding: 0.55rem;
+    }
+
+    .feature-card img {
+      width: 100%;
+      height: auto;
+      border: 2px solid #111;
+      display: block;
+    }
+
+    .feature-card p {
+      margin: 0.4rem 0 0;
+      font-size: 0.82rem;
+    }
+
+    footer {
+      margin-top: 2rem;
+      padding: 1rem;
+      border: var(--border);
+      background: var(--accent);
+      box-shadow: var(--shadow);
+      font-weight: 700;
+      text-align: center;
+    }
+
+    footer p {
+      margin: 0;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <h1>Pub2Hub — Neo-Brutalist Blog Editor for GitHub</h1>
+      <p class="tagline">Write posts. Click publish. Done.</p>
+      <p class="tagline-sub">No CMS. No backend. No subscriptions.</p>
+      <div class="cta-row">
+        <a class="btn btn--sky" href="https://monapdx.github.io/publish-to-github/">Live demo</a>
+        <a class="btn btn--primary" href="https://ashpdx.gumroad.com/l/lvsnmfb">Get it on Gumroad</a>
+        <a class="btn" href="README.md">Markdown README</a>
+      </div>
+      <p class="lead">
+        A browser-based editor that publishes <strong>plain HTML</strong> straight into <strong>your</strong> GitHub
+        repository. Posts live as files you own; GitHub Pages serves the <code>blog/</code> folder as your site.
+      </p>
+      <img
+        class="hero-img"
+        src="assets/neo-butalist-blog-editor-github.png"
+        width="1200"
+        height="675"
+        alt="Pub2Hub editor overview showing the neo-brutalist blog interface"
+      />
+    </header>
+
+    <section id="quick-overview">
+      <h2>Quick overview</h2>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Step</th>
+            <th scope="col">What happens</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Connect GitHub (username, repo, branch, token) — saved in <strong>this browser only</strong></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Write in Visual or Code mode; <strong>Save draft</strong> keeps a local backup</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><strong>Publish</strong> creates/updates <code>blog/posts/{slug}.html</code> and updates <code>blog/index.html</code></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>First publish bootstraps <code>blog/</code>, styles, and a GitHub Actions workflow</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Enable <strong>Settings → Pages → GitHub Actions</strong> once, then visit your site URL</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="note">
+        The <strong>Published</strong> sidebar updates immediately after publish or delete (optimistic UI). It reads
+        from the <strong>GitHub repo API</strong>, not the live Pages URL, so deployment lag does not hide new posts.
+      </p>
+    </section>
+
+    <hr />
+
+    <section id="windows">
+      <h2>Download and run on Windows</h2>
+      <p>
+        You need <strong>Node.js</strong> (LTS from
+        <a href="https://nodejs.org/">nodejs.org</a>) once per computer.
+      </p>
+      <ol>
+        <li>Download this repo (ZIP or clone).</li>
+        <li>Extract to a folder you can find (Desktop, Documents, etc.).</li>
+        <li>Double-click <code>install.bat</code> — wait until it finishes.</li>
+        <li>
+          Double-click <code>start.bat</code> — keep the window open; the browser opens the editor (usually
+          <code>http://localhost:5173/</code>).
+        </li>
+      </ol>
+      <figure>
+        <img
+          src="assets/command-prompt-windows.png"
+          alt="Windows command prompt when running install.bat or start.bat"
+          loading="lazy"
+        />
+        <figcaption>Windows command prompt when running install/start</figcaption>
+      </figure>
+      <p>
+        On first launch, the <strong>welcome</strong> screen asks for GitHub connection details. Use
+        <strong>Help</strong> in the top bar anytime for token steps, blog layout, and troubleshooting.
+      </p>
+      <p>To stop: close the browser tab and the <code>start.bat</code> window (or Ctrl+C in that window).</p>
+    </section>
+
+    <hr />
+
+    <section id="audience">
+      <h2>Who this is for</h2>
+      <ul>
+        <li>You want <strong>files in a repo</strong>, not a hosted CMS</li>
+        <li>You use (or want) <strong>GitHub</strong> and <strong>GitHub Pages</strong></li>
+        <li>You like a <strong>visual editor</strong> but want <strong>raw HTML</strong> when needed</li>
+        <li>You do not want another subscription or platform lock-in</li>
+      </ul>
+
+      <h3>What this is not</h3>
+      <ul>
+        <li>Not a hosted blogging platform</li>
+        <li>Not WordPress-in-a-box</li>
+        <li>Not a general static-site generator — layout is <strong>fixed</strong> under <code>blog/</code></li>
+      </ul>
+    </section>
+
+    <hr />
+
+    <section id="blog-layout">
+      <h2>Blog layout (fixed)</h2>
+      <p>Every publish uses the same structure:</p>
+      <pre><code>blog/
+  index.html          ← homepage + post cards
+  style.css
+  .nojekyll
+  posts/
+    my-post.html      ← one file per post
+.github/workflows/deploy-blog-pages.yml   ← added on first publish</code></pre>
+      <p>Bundled templates (in the app, not uploaded as a folder):</p>
+      <ul>
+        <li><code>templates/post-page-template.html</code> — full post pages</li>
+        <li><code>templates/post-card-template.html</code> — cards on the homepage</li>
+        <li><code>templates/index.html</code> — starter homepage design</li>
+      </ul>
+      <p>Homepage listing uses marker comments (invisible on the public site):</p>
+      <pre><code class="language-html">&lt;!-- BLOG_POSTS_START --&gt;
+&lt;!-- BLOG_POSTS_END --&gt;</code></pre>
+      <p>
+        New cards are inserted between these markers (newest first). Code view includes tools to check markers and
+        edit homepage HTML.
+      </p>
+    </section>
+
+    <hr />
+
+    <section id="editor">
+      <h2>Editor</h2>
+
+      <h3>Visual and Code modes</h3>
+      <figure>
+        <img src="assets/visual-code-editors.gif" alt="Switching between Visual and Code editors" loading="lazy" />
+        <figcaption>Visual and Code editors</figcaption>
+      </figure>
+      <ul>
+        <li>
+          <strong>Visual</strong> —
+          <a href="https://tiptap.dev/">TipTap</a> v3: headings, lists, quotes, links, images, tables, code blocks,
+          undo/redo. <strong>Ctrl/Cmd+S</strong> saves the current draft.
+        </li>
+        <li>
+          <strong>Code</strong> — raw HTML for the post body, plus an optional <strong>post template</strong> panel
+          (advanced sections collapsed by default).
+        </li>
+      </ul>
+
+      <h3>Toolbar</h3>
+      <figure>
+        <img src="assets/toolbar.png" alt="Editor formatting toolbar" loading="lazy" />
+        <figcaption>Editor toolbar</figcaption>
+      </figure>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <img src="assets/text-format-zoomed.gif" alt="Text formatting controls" loading="lazy" />
+          <p><strong>Text formatting</strong></p>
+        </div>
+        <div class="feature-card">
+          <img src="assets/insert-table.png" alt="Insert table dialog" loading="lazy" />
+          <p><strong>Insert table</strong></p>
+        </div>
+        <div class="feature-card">
+          <img src="assets/upload-media.png" alt="Upload media dialog" loading="lazy" />
+          <p><strong>Upload media</strong></p>
+        </div>
+        <div class="feature-card">
+          <img src="assets/insert-snippet.png" alt="Insert code snippet dialog" loading="lazy" />
+          <p><strong>Code snippet</strong></p>
+        </div>
+        <div class="feature-card">
+          <img src="assets/insert-image.png" alt="Insert image dialog" loading="lazy" />
+          <p><strong>Image</strong></p>
+        </div>
+      </div>
+      <p>
+        Tables support add/remove rows and columns. Images support URL or file upload (data URL in drafts), alt text,
+        size, and alignment. Code snippets export as normal <code>&lt;pre&gt;&lt;code&gt;</code> blocks.
+      </p>
+
+      <h3>Post meta</h3>
+      <p>
+        Under the title: collapsible <strong>slug, excerpt, and category</strong>. Excerpt and category can appear on
+        homepage cards and in optional <code>blog-editor:*</code> meta tags for round-trip editing.
+      </p>
+
+      <h3>Code view — templates (advanced)</h3>
+      <figure>
+        <img
+          src="assets/post-template-editor.png"
+          alt="Post template and homepage tools in Code mode"
+          loading="lazy"
+        />
+        <figcaption>Post template and homepage tools in Code mode</figcaption>
+      </figure>
+      <p>
+        Publishing always uses the <strong>bundled</strong> post page and card templates. Code view is for preview,
+        optional local template tweaks, loading <code>blog/index.html</code> from GitHub, and editing homepage/listing
+        HTML in collapsed <strong>Advanced</strong> sections. See in-app <strong>Help</strong> for placeholders and
+        markers.
+      </p>
+    </section>
+
+    <hr />
+
+    <section id="sidebar">
+      <h2>Sidebar: Drafts and Published</h2>
+
+      <h3>Drafts (local)</h3>
+      <figure>
+        <img src="assets/sidebar-drafts.png" alt="Drafts sidebar with local saved posts" loading="lazy" />
+        <figcaption>Drafts sidebar</figcaption>
+      </figure>
+      <ul>
+        <li>Stored in <strong>browser localStorage</strong> on this computer only</li>
+        <li><strong>New</strong>, open, delete, <strong>Save draft</strong>, and idle <strong>autosave</strong></li>
+        <li>Clear message if storage is full</li>
+      </ul>
+
+      <h3>Published (GitHub)</h3>
+      <figure>
+        <img src="assets/published-sidebar.png" alt="Published sidebar listing GitHub post files" loading="lazy" />
+        <figcaption>Published sidebar</figcaption>
+      </figure>
+      <ul>
+        <li>Lists <code>.html</code> files in <code>blog/posts/</code> via the <strong>GitHub Contents API</strong></li>
+        <li><strong>Refresh</strong> reloads from the repo (button shows “Refreshing…”, toast on success or error)</li>
+        <li>Open a post to edit and publish again (same file path)</li>
+        <li>
+          <strong>Delete Published Post</strong> removes the file and homepage card (with confirmation); sidebar
+          updates immediately
+        </li>
+        <li>After publish, the new/updated post appears at the top <strong>without</strong> waiting for Pages deployment</li>
+      </ul>
+      <p>Opening a published file <strong>sanitizes</strong> body HTML (DOMPurify) before loading into the editor.</p>
+    </section>
+
+    <hr />
+
+    <section id="publishing">
+      <h2>Publishing</h2>
+      <figure>
+        <img src="assets/Pub2Hub.png" alt="Publish connection dialog opened from the header" loading="lazy" />
+        <figcaption>Publish connection dialog</figcaption>
+      </figure>
+      <ol>
+        <li>Click <strong>Publish</strong> in the header.</li>
+        <li>Confirm username, repository, branch, and personal access token.</li>
+        <li>Click <strong>Publish to GitHub</strong>.</li>
+      </ol>
+      <p>The app will:</p>
+      <ul>
+        <li>Bootstrap <code>blog/</code> and the Pages workflow on first publish</li>
+        <li>Write <code>blog/posts/{slug}.html</code> from the bundled post template</li>
+        <li>Fetch <code>blog/index.html</code>, insert or update the post card between markers, and save</li>
+        <li>Show a clear error if the post saved but the index could not be updated</li>
+      </ul>
+      <p class="note">
+        <strong>One-time:</strong> In the repo on GitHub, open <strong>Settings → Pages</strong> and set
+        <strong>Build and deployment</strong> source to <strong>GitHub Actions</strong>, then run
+        <strong>Deploy blog to GitHub Pages</strong> under the Actions tab.
+      </p>
+      <p>
+        Connection settings save to <code>localStorage</code> after a successful publish or
+        <strong>Save connection settings</strong>.
+      </p>
+    </section>
+
+    <hr />
+
+    <section id="help">
+      <h2>Help</h2>
+      <p><strong>Help</strong> in the header opens a short, scannable guide:</p>
+      <ul>
+        <li><strong>Quick start</strong> (always visible)</li>
+        <li>
+          Collapsible sections: blog structure, token setup, editing published posts, common problems, advanced
+          details
+        </li>
+      </ul>
+      <p>No account data is sent to a third-party server — only GitHub’s API, using your token from the browser.</p>
+    </section>
+
+    <hr />
+
+    <section id="mobile">
+      <h2>Mobile</h2>
+      <figure>
+        <img src="assets/mobile.png" alt="Pub2Hub on a mobile-sized viewport" loading="lazy" />
+        <figcaption>Mobile layout</figcaption>
+      </figure>
+      <p>Usable on smaller screens; writing and publishing are easiest on desktop.</p>
+    </section>
+
+    <hr />
+
+    <section id="developers">
+      <h2>Developers</h2>
+      <pre><code>npm install
+npm run dev</code></pre>
+      <figure>
+        <img src="assets/npm-run-dev.png" alt="Terminal running npm run dev" loading="lazy" />
+        <figcaption>Dev server in terminal</figcaption>
+      </figure>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Script</th>
+            <th scope="col">Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>npm run dev</code></td><td>Local dev server (Vite)</td></tr>
+          <tr><td><code>npm run build</code></td><td>Production build</td></tr>
+          <tr><td><code>npm run preview</code></td><td>Preview production build</td></tr>
+          <tr><td><code>npm run lint</code></td><td>ESLint</td></tr>
+          <tr><td><code>npm test</code></td><td>Vitest (blog index, publish helpers, sanitization, GitHub messages)</td></tr>
+        </tbody>
+      </table>
+      <p>CI runs lint, tests, and build on push/PR (<code>.github/workflows/ci.yml</code>).</p>
+
+      <h3>GitHub token</h3>
+      <p><strong>Fine-grained (recommended)</strong> on the target repo:</p>
+      <ul>
+        <li><strong>Contents</strong> — Read and write</li>
+        <li><strong>Metadata</strong> — Read-only</li>
+        <li><strong>Workflows</strong> — Read and write (first publish adds the deploy workflow)</li>
+      </ul>
+      <p><strong>Classic</strong> alternative: <code>repo</code> scope (<code>ghp_…</code>).</p>
+      <p>
+        Use the repo <strong>owner</strong> (your username or org name), not a personal username for an org-owned repo.
+      </p>
+    </section>
+
+    <hr />
+
+    <section id="stack">
+      <h2>Stack</h2>
+      <ul>
+        <li>React 19, Vite 8, ESLint 9, Vitest</li>
+        <li>TipTap 3 (StarterKit, Link, Underline, Image, Placeholder, Table)</li>
+        <li>DOMPurify when opening published HTML</li>
+        <li>GitHub REST API for file create/update/delete and directory listing</li>
+      </ul>
+    </section>
+
+    <hr />
+
+    <section id="why">
+      <h2>Why this exists</h2>
+      <ul>
+        <li>No database</li>
+        <li>No dashboard lock-in</li>
+        <li>No subscription — you pay for the tool once if you buy on Gumroad</li>
+        <li><strong>Write → Save locally → Publish to GitHub → Files you control</strong></li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>Pub2Hub — Neo-Brutalist Blog Editor for GitHub</p>
+    </footer>
+  </div>
+</body>
+</html>

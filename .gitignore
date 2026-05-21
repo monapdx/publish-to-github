@@ -12,6 +12,8 @@ dist
 dist-ssr
 release
 *.local
+Pub2Hub-v*/
+Pub2Hub-*.zip
 
 # Editor directories and files
 .vscode/*

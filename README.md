@@ -4,7 +4,8 @@
 No CMS. No backend. No subscriptions.
 
 👉 Live demo: https://monapdx.github.io/publish-to-github/  
-👉 Get it on Gumroad: [Get It Now](https://ashpdx.gumroad.com/l/lvsnmfb)
+👉 Get it on Gumroad: [Get It Now](https://ashpdx.gumroad.com/l/lvsnmfb)  
+📄 HTML version: [README.html](README.html) (open in a browser)
 
 ![Pub2Hub editor overview](assets/neo-butalist-blog-editor-github.png)
 
