@@ -7,6 +7,10 @@ No CMS. No backend. No subscriptions.
 👉 Get it on Gumroad: [Get It Now](https://ashpdx.gumroad.com/l/lvsnmfb)  
 📄 HTML version: [README.html](README.html) (open in a browser)
 
+<a href="https://open-launch.com/projects/pub2hub" target="_blank" rel="noopener">
+  <img src="https://open-launch.com/api/badge/10d58d3f-928c-4dd5-9c3d-6255f8ca9d4c/featured-light.svg" alt="Featured on Open-Launch" width="200" height="50" />
+</a>
+
 ![Pub2Hub editor overview](assets/neo-butalist-blog-editor-github.png)
 
 A browser-based editor that publishes **plain HTML** straight into **your** GitHub repository. Posts live as files you own; GitHub Pages serves the `blog/` folder as your site.
