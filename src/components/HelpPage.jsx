@@ -1,5 +1,14 @@
 import { MARKER_BLOCK_SNIPPET } from '../lib/blogIndex'
 
+function HelpDetails({ title, children, defaultOpen = false }) {
+  return (
+    <details className="help-details" open={defaultOpen || undefined}>
+      <summary className="help-details__summary">{title}</summary>
+      <div className="help-details__body">{children}</div>
+    </details>
+  )
+}
+
 export function HelpPage({ open, onClose }) {
   if (!open) return null
 
@@ -13,182 +22,139 @@ export function HelpPage({ open, onClose }) {
         onMouseDown={(ev) => ev.stopPropagation()}
       >
         <div className="help-panel__header">
-          <h2 id="help-title">Getting Started</h2>
+          <h2 id="help-title">Help</h2>
           <button type="button" className="btn btn--ghost btn--small" onClick={onClose}>
             Close
           </button>
         </div>
 
         <div className="help-panel__body">
-          <section className="help-section">
-            <h3>What this tool does</h3>
-            <p>
-              This is a <strong>local post editor</strong> that turns your writing into a normal web page file (HTML)
-              and sends it straight to a folder in <strong>your</strong> GitHub project. You stay in control: your words
-              live in files you can move, back up, or delete anytime.
-            </p>
+          <section className="help-quick" aria-labelledby="help-quick-title">
+            <h3 id="help-quick-title" className="help-quick__title">
+              Quick start
+            </h3>
+            <ol className="help-checklist">
+              <li>
+                <strong>Connect GitHub</strong> — welcome screen or <strong>Publish</strong> (username, repo, token).
+              </li>
+              <li>
+                <strong>Write a post</strong> — title and body in the editor.
+              </li>
+              <li>
+                <strong>Click Publish</strong> — confirm connection, then <strong>Publish to GitHub</strong>.
+              </li>
+              <li>
+                <strong>Enable Pages</strong> (first publish only) — repo <strong>Settings → Pages → GitHub Actions</strong>.
+              </li>
+              <li>
+                <strong>Visit your site</strong> — URL on the Pages settings screen after the deploy workflow runs.
+              </li>
+            </ol>
           </section>
 
-          <section className="help-section">
-            <h3>What a repository (“repo”) is</h3>
+          <HelpDetails title="Blog structure">
+            <pre className="help-tree" aria-label="Blog folder layout">{`blog/
+  index.html
+  style.css
+  posts/
+    my-post.html`}</pre>
             <p>
-              Think of a GitHub <strong>repository</strong> as a <strong>project folder in the cloud</strong>. It holds
-              your site’s files (pages, images, styles). This app needs your <strong>username</strong>, the{' '}
-              <strong>repository name</strong>, and a <strong>personal access token</strong> (a private key) so it can
-              add or update post files in that folder.
+              Posts are saved as normal HTML files and listed automatically on the homepage.
             </p>
-          </section>
+          </HelpDetails>
 
-          <section className="help-section">
-            <h3>GitHub Pages (assumes you have not set it up yet)</h3>
+          <HelpDetails title="GitHub token setup">
+            <p className="help-lead">Need help creating a token?</p>
             <p>
-              <strong>GitHub Pages</strong> turns your repository into a public website. This app assumes Pages is{' '}
-              <strong>not</strong> configured yet. On first publish it adds{' '}
-              <code>.github/workflows/deploy-blog-pages.yml</code>, which deploys the entire <code>blog/</code> folder so{' '}
-              <code>blog/index.html</code> becomes your site homepage.
+              <strong>Fine-grained (recommended)</strong> — Settings → Developer settings → Personal access tokens →
+              Fine-grained → generate for <strong>only your repo</strong>.
+            </p>
+            <ul className="help-list help-list--bullets">
+              <li>
+                <strong>Contents</strong>: Read and write
+              </li>
+              <li>
+                <strong>Metadata</strong>: Read-only
+              </li>
+              <li>
+                <strong>Workflows</strong>: Read and write (so the deploy workflow can be added)
+              </li>
+            </ul>
+            <p>
+              <strong>Username</strong> must match the repo owner (your account or the org name, not your personal name
+              for an org repo). Paste the token once — no extra spaces.
             </p>
             <p>
-              <strong>One-time after the first publish:</strong> open your repo on GitHub → <strong>Settings</strong> →{' '}
-              <strong>Pages</strong> → under <strong>Build and deployment</strong>, set <strong>Source</strong> to{' '}
-              <strong>GitHub Actions</strong> (not “Deploy from a branch”). Then open the <strong>Actions</strong> tab and
-              run or re-run <strong>Deploy blog to GitHub Pages</strong>. Your site URL appears on the Pages settings
-              screen once the workflow succeeds.
+              <strong>Classic fallback</strong> — Tokens (classic) with the <strong>repo</strong> scope (<code>ghp_</code>
+              ).
             </p>
-          </section>
+          </HelpDetails>
 
-          <section className="help-section">
-            <h3>Fixed blog layout (not configurable)</h3>
+          <HelpDetails title="Editing existing posts">
+            <ol className="help-list">
+              <li>Open the sidebar <strong>Published</strong> tab.</li>
+              <li>Select the post to load it.</li>
+              <li>Edit title, body, or slug.</li>
+              <li>
+                <strong>Publish</strong> again — the same file on GitHub is updated.
+              </li>
+            </ol>
+          </HelpDetails>
+
+          <HelpDetails title="Common problems">
+            <dl className="help-issues">
+              <div>
+                <dt>Repository not found</dt>
+                <dd>
+                  Check username and repo name spelling. The repo must already exist on GitHub.
+                </dd>
+              </div>
+              <div>
+                <dt>Token permissions</dt>
+                <dd>
+                  Use a fresh token with Contents (and Workflows) on this repo. Open <strong>Details</strong> in the
+                  Publish dialog for GitHub’s exact error.
+                </dd>
+              </div>
+              <div>
+                <dt>Workflow / Pages deployment</dt>
+                <dd>
+                  After first publish, set Pages source to <strong>GitHub Actions</strong> and run{' '}
+                  <strong>Deploy blog to GitHub Pages</strong> under Actions.
+                </dd>
+              </div>
+              <div>
+                <dt>Missing homepage markers</dt>
+                <dd>
+                  Add <code>BLOG_POSTS_START</code> and <code>BLOG_POSTS_END</code> in <code>blog/index.html</code> so
+                  new posts appear on the homepage. Use Code view → advanced homepage tools to check.
+                </dd>
+              </div>
+            </dl>
+          </HelpDetails>
+
+          <HelpDetails title="Advanced details">
             <p>
-              Every repo uses the same structure — an opinionated GitHub Pages blog, not a general static-site tool:
+              <strong>Marker comments</strong> — invisible HTML comments that tell the app where to insert post cards
+              (newest first):
             </p>
-            <pre className="help-marker-snippet">{`blog/
+            <pre className="help-tree">{MARKER_BLOCK_SNIPPET}</pre>
+            <p>
+              <strong>Templates</strong> — bundled under <code>templates/</code> (post page, post card, index design).
+              Publish uses those files; Code view is for optional customization.
+            </p>
+            <p>
+              <strong>Workflow</strong> — <code>.github/workflows/deploy-blog-pages.yml</code> deploys the{' '}
+              <code>blog/</code> folder to GitHub Pages.
+            </p>
+            <pre className="help-tree" aria-label="Full generated layout">{`blog/
   index.html
   style.css
   .nojekyll
   posts/
-    my-post.html`}</pre>
-            <p>
-              On first publish, starter files are copied from the app’s read-only <code>templates/</code> folder. Posts
-              always link from the homepage as <code>posts/slug.html</code> and use <code>../style.css</code>. The app does{' '}
-              <strong>not</strong> upload <code>blog/templates/</code>.
-            </p>
-            <p>
-              After each publish, the app can add a short “post card” block to that index file. It only does this if you
-              place two <strong>marker comments</strong> (<code>BLOG_POSTS_START</code> / <code>BLOG_POSTS_END</code>) in
-              the HTML — invisible labels that do not show on the public site. New posts are inserted right after the
-              start marker (newest first). Use <strong>Edit homepage HTML</strong>{' '}
-              to edit the file, check markers, or adjust card HTML.
-            </p>
-            <pre className="help-marker-snippet">{MARKER_BLOCK_SNIPPET}</pre>
-          </section>
-
-          <section className="help-section">
-            <h3>Fine-grained token (recommended checklist)</h3>
-            <ol className="help-list">
-              <li>
-                GitHub → your profile <strong>Settings</strong> → <strong>Developer settings</strong> →{' '}
-                <strong>Personal access tokens</strong> → <strong>Fine-grained tokens</strong> →{' '}
-                <strong>Generate new token</strong>.
-              </li>
-              <li>
-                <strong>Resource owner</strong> — pick your user account, or the <strong>organization</strong> if the
-                repo lives under an org.
-              </li>
-              <li>
-                <strong>Repository access</strong> — choose <strong>Only select repositories</strong> and select the
-                exact repo you type in this app (not “All repositories” unless you intend that).
-              </li>
-              <li>
-                <strong>Permissions → Repository permissions</strong>:
-                <ul className="help-list help-list--bullets">
-                  <li>
-                    <strong>Contents</strong>: Access <strong>Read and write</strong> (required to publish posts and
-                    blog files)
-                  </li>
-                  <li>
-                    <strong>Metadata</strong>: Access <strong>Read-only</strong> (usually required to open the repo)
-                  </li>
-                  <li>
-                    <strong>Workflows</strong>: Access <strong>Read and write</strong> (required for the app to add{' '}
-                    <code>.github/workflows/deploy-blog-pages.yml</code> automatically)
-                  </li>
-                </ul>
-              </li>
-              <li>
-                If your token can limit branches, allow the branch you enter here (often <code>main</code>).
-              </li>
-              <li>
-                Copy the token once (it starts with <code>github_pat_</code>) and paste it with no extra spaces. GitHub
-                will not show it again.
-              </li>
-            </ol>
-            <p>
-              <strong>GitHub username</strong> in this app must match the repo owner: your username for personal repos,
-              or the <strong>organization name</strong> for org repos (not your personal username if the repo is under an
-              org).
-            </p>
-          </section>
-
-          <section className="help-section">
-            <h3>Classic token (alternative)</h3>
-            <p>
-              Developer settings → Personal access tokens → <strong>Tokens (classic)</strong> → generate with scope{' '}
-              <strong>repo</strong> (full control of private repositories). Paste the <code>ghp_</code> token here.
-            </p>
-          </section>
-
-          <section className="help-section">
-            <h3>How to add the token here</h3>
-            <p>
-              On first launch, use the welcome screen. Later, open <strong>Publish</strong> in the top bar. Settings are
-              stored in your browser on this computer (not on our servers).
-            </p>
-          </section>
-
-          <section className="help-section">
-            <h3>Publish your first post</h3>
-            <ol className="help-list">
-              <li>Write a title and your post in the main editor.</li>
-              <li>Click <strong>Save draft locally</strong> if you want a backup on this computer.</li>
-              <li>
-                Click <strong>Publish</strong>, confirm your repo details, then{' '}
-                <strong>Publish to GitHub</strong>.
-              </li>
-              <li>Wait for the success message. Your file appears at <code>blog/posts/your-slug.html</code>.</li>
-            </ol>
-          </section>
-
-          <section className="help-section">
-            <h3>Edit a post you already published</h3>
-            <p>
-              In the sidebar, open the <strong>Published</strong> tab, click your post, edit, then publish again. The
-              app updates the same file on GitHub.
-            </p>
-          </section>
-
-          <section className="help-section">
-            <h3>Common mistakes and fixes</h3>
-            <ul className="help-list help-list--bullets">
-              <li>
-                <strong>“Repository not found”</strong> — Check spelling of username and repo name. The repo must
-                already exist on GitHub.
-              </li>
-              <li>
-                <strong>Token errors (401 / 403)</strong> — Paste the whole token with no spaces. For fine-grained tokens,
-                confirm <strong>Contents: Read and write</strong> on the <em>same</em> repository, correct{' '}
-                <strong>owner</strong> (org vs user), and branch name. Open the error “Details” in the Publish dialog for
-                GitHub’s exact message.
-              </li>
-              <li>
-                <strong>Empty published list</strong> — Publish once to create <code>blog/posts/</code>, or confirm the{' '}
-                <strong>branch</strong> is correct (often <code>main</code>).
-              </li>
-              <li>
-                <strong>Need Node.js for the Windows BAT files</strong> — Install Node from nodejs.org (LTS), then run{' '}
-                <code>install.bat</code> again.
-              </li>
-            </ul>
-          </section>
+    your-slug.html
+.github/workflows/deploy-blog-pages.yml`}</pre>
+          </HelpDetails>
         </div>
       </div>
     </div>
