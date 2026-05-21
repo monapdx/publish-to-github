@@ -408,17 +408,28 @@ export default function App() {
 
   const handleConfirmDeletePublished = useCallback(async () => {
     if (!canDeletePublished) return
+    const deletedPath = postRepoPath(deleteSlug)
+    const hadOpenPublished = publishedSource?.path === deletedPath
     setDeleteBusy(true)
     try {
       const result = await deletePublishedPost({
         form: githubSettings,
         slug: deleteSlug,
       })
-      pushToast(result.successMessage)
-      if (publishedSource?.path === postRepoPath(deleteSlug)) {
+
+      setPublishedFiles((files) => files.filter((f) => f.path !== deletedPath))
+      if (hadOpenPublished) {
         setPublishedSource(null)
+        handleNewDraft()
       }
-      loadPublishedList().catch(() => {})
+
+      await loadPublishedList()
+
+      if (result.postDeleted && result.indexUpdated) {
+        pushToast('Deleted published post and refreshed the published list.')
+      } else {
+        pushToast(result.successMessage)
+      }
       setDeleteConfirmOpen(false)
     } catch (err) {
       if (err instanceof PublishValidationError) {
@@ -437,6 +448,7 @@ export default function App() {
     pushToast,
     publishedSource,
     loadPublishedList,
+    handleNewDraft,
   ])
 
   const openPublishDialog = useCallback(() => {
