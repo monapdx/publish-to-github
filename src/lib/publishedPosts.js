@@ -38,3 +38,35 @@ export function pruneRecentlyDeletedSlugs(recentlyDeleted, repoFiles) {
     return repoFiles.some((f) => f.path === path || publishedFileSlug(f) === slug)
   })
 }
+
+/** Sidebar entry after publish (compatible with GitHub listPostHtmlFiles shape). */
+export function buildOptimisticPublishedFile({
+  slug,
+  title,
+  excerpt,
+  category,
+  path,
+  url,
+  publishedAt,
+}) {
+  const safeSlug = String(slug ?? '').trim() || 'post'
+  return {
+    slug: safeSlug,
+    title: String(title ?? '').trim() || 'Untitled',
+    excerpt: String(excerpt ?? '').trim(),
+    category: String(category ?? '').trim(),
+    path: path || postRepoPath(safeSlug),
+    url: url || `posts/${safeSlug}.html`,
+    publishedAt: publishedAt || new Date().toISOString(),
+    name: `${safeSlug}.html`,
+    sha: null,
+  }
+}
+
+/** Prepend or replace by slug/path (newest first). */
+export function upsertPublishedPost(files, item) {
+  const withoutExisting = files.filter(
+    (post) => publishedFileSlug(post) !== item.slug && post.path !== item.path,
+  )
+  return [item, ...withoutExisting]
+}

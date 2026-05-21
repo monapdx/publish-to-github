@@ -136,6 +136,8 @@ export async function publishPostAndIndex({
     successMessage += ` · ${site.pagesSetupHint}`
   }
 
+  const publishedAt = new Date().toISOString()
+
   return {
     successMessage,
     workflowWarning: site.workflowWarning,
@@ -145,6 +147,12 @@ export async function publishPostAndIndex({
     indexUpdateReason: indexResult.reason ?? 'Card inserted between BLOG_POSTS markers.',
     indexPath,
     postPath: path,
+    slug,
+    title: safeTitle,
+    excerpt: String(excerpt ?? '').trim(),
+    category: String(category ?? '').trim(),
+    url: postHref(slug),
+    publishedAt,
     indexHomeBanner: { show: false, text: '' },
     indexErrorToast: null,
   }

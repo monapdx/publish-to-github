@@ -351,6 +351,14 @@
   font-weight: 700;
 }
 
+.draft-list__error--inline {
+  margin: 0 0 0.45rem;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.78rem;
+  border: 2px solid #b0004d;
+  background: #fff0f5;
+}
+
 .draft-list__items--published .draft-item {
   width: 100%;
 }

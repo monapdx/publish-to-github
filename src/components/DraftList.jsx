@@ -8,6 +8,7 @@ export function DraftList({
   onNew,
   publishedFiles,
   publishedLoading,
+  publishedRefreshing = false,
   publishedError,
   publishedErrorDetail,
   currentPublishedPath,
@@ -89,10 +90,10 @@ export function DraftList({
             <button
               type="button"
               className="btn btn--small btn--ghost"
-              onClick={onRefreshPublished}
-              disabled={!githubReady || publishedLoading}
+              onClick={() => onRefreshPublished()}
+              disabled={!githubReady || publishedLoading || publishedRefreshing}
             >
-              Refresh
+              {publishedRefreshing ? 'Refreshing…' : 'Refresh'}
             </button>
           </div>
           {!githubReady ? (
@@ -100,9 +101,9 @@ export function DraftList({
               Connect GitHub with <strong>Publish</strong> in the top bar (or finish the welcome setup) to list HTML
               posts from your repo.
             </p>
-          ) : publishedLoading ? (
+          ) : publishedLoading && !publishedRefreshing ? (
             <p className="draft-list__empty">Loading your published posts from GitHub…</p>
-          ) : publishedError ? (
+          ) : publishedError && publishedFiles.length === 0 ? (
             <div className="draft-list__empty draft-list__error">
               <p>{publishedError}</p>
               {publishedErrorDetail ? (
@@ -122,7 +123,11 @@ export function DraftList({
               .
             </p>
           ) : (
-            <ul className="draft-list__items draft-list__items--published">
+            <>
+              {publishedError ? (
+                <p className="draft-list__empty draft-list__error draft-list__error--inline">{publishedError}</p>
+              ) : null}
+              <ul className="draft-list__items draft-list__items--published">
               {publishedFiles.map((f) => (
                 <li key={f.path}>
                   <button
@@ -130,12 +135,13 @@ export function DraftList({
                     className={`draft-item ${f.path === currentPublishedPath ? 'is-active' : ''}`}
                     onClick={() => onOpenPublished(f.path)}
                   >
-                    <span className="draft-item__title">{displayFileName(f.name)}</span>
+                    <span className="draft-item__title">{displayFileName(f)}</span>
                     <span className="draft-item__meta">{f.path}</span>
                   </button>
                 </li>
               ))}
-            </ul>
+              </ul>
+            </>
           )}
         </>
       )}
@@ -143,8 +149,9 @@ export function DraftList({
   )
 }
 
-function displayFileName(name) {
-  const n = String(name || '')
+function displayFileName(file) {
+  if (file?.title) return String(file.title)
+  const n = String(file?.name || '')
   return n.replace(/\.html$/i, '') || n || '(untitled)'
 }
 

@@ -20,8 +20,10 @@ import { deletePublishedPost } from './lib/deletePublishedPost'
 import { PublishValidationError } from './lib/publishTemplates'
 import { postHref, postRepoPath } from './lib/blogPaths'
 import {
+  buildOptimisticPublishedFile,
   filterVisiblePublishedPosts,
   pruneRecentlyDeletedSlugs,
+  upsertPublishedPost,
   withoutDeletedPost,
 } from './lib/publishedPosts'
 import { PostTemplatePanel } from './components/PostTemplatePanel'
@@ -64,6 +66,7 @@ export default function App() {
   const [publishedFiles, setPublishedFiles] = useState([])
   const [recentlyDeletedSlugs, setRecentlyDeletedSlugs] = useState([])
   const [publishedLoading, setPublishedLoading] = useState(false)
+  const [publishedRefreshing, setPublishedRefreshing] = useState(false)
   const publishedRefreshTimeoutRef = useRef(null)
   const [publishedError, setPublishedError] = useState('')
   const [publishedErrorDetail, setPublishedErrorDetail] = useState('')
@@ -111,7 +114,7 @@ export default function App() {
   )
 
   const refreshPublishedPostsFromRepo = useCallback(
-    async ({ silent = false } = {}) => {
+    async ({ showPanelLoading = true } = {}) => {
       const token = githubSettings.token?.trim()
       const owner = githubSettings.owner?.trim()
       const repo = githubSettings.repo?.trim()
@@ -120,9 +123,9 @@ export default function App() {
         setPublishedLoading(false)
         setPublishedError('')
         setPublishedErrorDetail('')
-        return
+        return []
       }
-      if (!silent) {
+      if (showPanelLoading) {
         setPublishedLoading(true)
         setPublishedError('')
         setPublishedErrorDetail('')
@@ -137,21 +140,43 @@ export default function App() {
         const sorted = [...files].sort((a, b) => a.name.localeCompare(b.name))
         setPublishedFiles(sorted)
         setRecentlyDeletedSlugs((prev) => pruneRecentlyDeletedSlugs(prev, sorted))
+        return sorted
       } catch (err) {
-        if (!silent) {
-          const { friendly, technical } = getFriendlyGithubError(err, 'list')
+        const { friendly, technical } = getFriendlyGithubError(err, 'list')
+        if (showPanelLoading) {
           setPublishedError(friendly)
           setPublishedErrorDetail(technical)
           setPublishedFiles([])
         }
+        throw new Error(friendly)
       } finally {
-        if (!silent) setPublishedLoading(false)
+        if (showPanelLoading) setPublishedLoading(false)
       }
     },
     [githubSettings],
   )
 
-  const loadPublishedList = refreshPublishedPostsFromRepo
+  const loadPublishedList = useCallback(() => {
+    return refreshPublishedPostsFromRepo({ showPanelLoading: true })
+  }, [refreshPublishedPostsFromRepo])
+
+  const handleRefreshPublished = useCallback(async () => {
+    console.log('Refresh published posts clicked')
+    setPublishedRefreshing(true)
+    setPublishedError('')
+    setPublishedErrorDetail('')
+    try {
+      const posts = await refreshPublishedPostsFromRepo({ showPanelLoading: false })
+      console.log('Fetched published posts:', posts)
+      pushToast('Published list refreshed')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not refresh the published list.'
+      setPublishedError(message)
+      pushToast(message)
+    } finally {
+      setPublishedRefreshing(false)
+    }
+  }, [refreshPublishedPostsFromRepo, pushToast])
 
   const visiblePublishedFiles = useMemo(
     () => filterVisiblePublishedPosts(publishedFiles, recentlyDeletedSlugs),
@@ -389,7 +414,7 @@ export default function App() {
         const publishedDraftId = draftId
         const s = slug.trim() || slugify(title) || 'post'
         const path = postRepoPath(s)
-        const { indexHomeBanner, successMessage, workflowWarning } = await publishPostAndIndex({
+        const result = await publishPostAndIndex({
           form,
           path,
           slug: s,
@@ -399,8 +424,22 @@ export default function App() {
           category,
           categoryClass: 'nb-bg-pink',
         })
-        setIndexHomeBanner(indexHomeBanner)
-        if (workflowWarning) pushToast(workflowWarning)
+        setIndexHomeBanner(result.indexHomeBanner)
+
+        const publishedItem = buildOptimisticPublishedFile({
+          slug: result.slug,
+          title: result.title,
+          excerpt: result.excerpt,
+          category: result.category,
+          path: result.postPath,
+          url: result.url,
+          publishedAt: result.publishedAt,
+        })
+        setPublishedFiles((posts) => upsertPublishedPost(posts, publishedItem))
+        setRecentlyDeletedSlugs((prev) => prev.filter((deleted) => deleted !== result.slug))
+        setListTab('published')
+
+        if (result.workflowWarning) pushToast(result.workflowWarning)
 
         setGithubSettings({ ...form })
         if (!persistGithubSettings({ ...form })) {
@@ -413,10 +452,15 @@ export default function App() {
           refreshDrafts()
           handleNewDraft()
         }
-        pushToast(successMessage)
-        const publishedSlug = slug.trim() || slugify(title) || 'post'
-        setRecentlyDeletedSlugs((prev) => prev.filter((s) => s !== publishedSlug))
-        refreshPublishedPostsFromRepo({ silent: true }).catch(() => {})
+        pushToast('Published post. GitHub Pages may take a minute to redeploy.')
+
+        if (publishedRefreshTimeoutRef.current != null) {
+          window.clearTimeout(publishedRefreshTimeoutRef.current)
+        }
+        publishedRefreshTimeoutRef.current = window.setTimeout(() => {
+          publishedRefreshTimeoutRef.current = null
+          refreshPublishedPostsFromRepo({ showPanelLoading: false }).catch(() => {})
+        }, 5000)
       } finally {
         setPublishBusy(false)
       }
@@ -480,7 +524,7 @@ export default function App() {
       }
       publishedRefreshTimeoutRef.current = window.setTimeout(() => {
         publishedRefreshTimeoutRef.current = null
-        refreshPublishedPostsFromRepo({ silent: true }).catch(() => {})
+        refreshPublishedPostsFromRepo({ showPanelLoading: false }).catch(() => {})
       }, 5000)
     } catch (err) {
       if (err instanceof PublishValidationError) {
@@ -567,11 +611,12 @@ export default function App() {
               onNew={handleNewDraft}
               publishedFiles={visiblePublishedFiles}
               publishedLoading={publishedLoading}
+              publishedRefreshing={publishedRefreshing}
               publishedError={publishedError}
               publishedErrorDetail={publishedErrorDetail}
               currentPublishedPath={publishedSource?.path ?? null}
               onOpenPublished={handleOpenPublished}
-              onRefreshPublished={loadPublishedList}
+              onRefreshPublished={() => void handleRefreshPublished()}
               githubReady={githubReady}
               onOpenPublishSettings={openPublishDialog}
             />
