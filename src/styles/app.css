@@ -226,6 +226,13 @@ body {
   font-size: 0.95rem;
 }
 
+.post-meta__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.55rem;
+}
+
 .post-meta__hint {
   margin: 0;
   font-size: 0.8rem;
@@ -285,6 +292,21 @@ body {
 
 .btn--sky {
   background: #00bfff;
+  color: #ffffff;
+}
+
+.btn--danger {
+  background: #ff3b30;
+  border-color: #111;
+  color: #ffffff;
+}
+
+.btn.btn--danger:hover:not(:disabled) {
+  background: #d6281d;
+  color: #ffffff;
+}
+
+.btn.btn--danger:active:not(:disabled) {
   color: #ffffff;
 }
 

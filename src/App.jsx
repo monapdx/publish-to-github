@@ -4,6 +4,7 @@ import { ToastStack } from './components/ToastStack'
 import { HtmlEditor } from './components/HtmlEditor'
 import { DraftList } from './components/DraftList'
 import { PublishDialog } from './components/PublishDialog'
+import { DeletePublishedPostDialog } from './components/DeletePublishedPostDialog'
 import { FirstRunSetup } from './components/FirstRunSetup'
 import { HelpPage } from './components/HelpPage'
 import { BlogIndexEditorDialog } from './components/BlogIndexEditorDialog'
@@ -15,6 +16,8 @@ import { parsePublishedHtml } from './lib/postSerializer'
 import { loadPostTemplate, persistPostTemplate } from './lib/postTemplate'
 import { fetchRepoFileText, listPostHtmlFiles } from './lib/github'
 import { publishPostAndIndex } from './lib/publishPipeline'
+import { deletePublishedPost } from './lib/deletePublishedPost'
+import { PublishValidationError } from './lib/publishTemplates'
 import { postRepoPath } from './lib/blogPaths'
 import { PostTemplatePanel } from './components/PostTemplatePanel'
 
@@ -64,6 +67,9 @@ export default function App() {
   const [publishedSource, setPublishedSource] = useState(null)
   const [publishOpen, setPublishOpen] = useState(false)
   const [publishDialogKey, setPublishDialogKey] = useState(0)
+  const [publishBusy, setPublishBusy] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [deleteBusy, setDeleteBusy] = useState(false)
   const [toasts, setToasts] = useState([])
   const [postTemplateHtml, setPostTemplateHtml] = useState(() => loadPostTemplate())
   /** Snapshot of the last persisted draft (manual save, autosave, or open). */
@@ -347,35 +353,40 @@ export default function App() {
 
   const handlePublish = useCallback(
     async (form) => {
-      const publishedDraftId = draftId
-      const s = slug.trim() || slugify(title) || 'post'
-      const path = postRepoPath(s)
-      const { indexHomeBanner, successMessage, workflowWarning } = await publishPostAndIndex({
-        form,
-        path,
-        slug: s,
-        title,
-        content,
-        excerpt,
-        category,
-        categoryClass: 'nb-bg-pink',
-      })
-      setIndexHomeBanner(indexHomeBanner)
-      if (workflowWarning) pushToast(workflowWarning)
+      setPublishBusy(true)
+      try {
+        const publishedDraftId = draftId
+        const s = slug.trim() || slugify(title) || 'post'
+        const path = postRepoPath(s)
+        const { indexHomeBanner, successMessage, workflowWarning } = await publishPostAndIndex({
+          form,
+          path,
+          slug: s,
+          title,
+          content,
+          excerpt,
+          category,
+          categoryClass: 'nb-bg-pink',
+        })
+        setIndexHomeBanner(indexHomeBanner)
+        if (workflowWarning) pushToast(workflowWarning)
 
-      setGithubSettings({ ...form })
-      if (!persistGithubSettings({ ...form })) {
-        pushToast(
-          'Posted to GitHub, but connection settings could not be saved in this browser (storage may be full or disabled).',
-        )
+        setGithubSettings({ ...form })
+        if (!persistGithubSettings({ ...form })) {
+          pushToast(
+            'Posted to GitHub, but connection settings could not be saved in this browser (storage may be full or disabled).',
+          )
+        }
+        if (publishedDraftId) {
+          deleteDraft(publishedDraftId)
+          refreshDrafts()
+          handleNewDraft()
+        }
+        pushToast(successMessage)
+        loadPublishedList().catch(() => {})
+      } finally {
+        setPublishBusy(false)
       }
-      if (publishedDraftId) {
-        deleteDraft(publishedDraftId)
-        refreshDrafts()
-        handleNewDraft()
-      }
-      pushToast(successMessage)
-      loadPublishedList().catch(() => {})
     },
     [
       draftId,
@@ -390,6 +401,43 @@ export default function App() {
       loadPublishedList,
     ],
   )
+
+  const deleteSlug = slug.trim() || slugify(title) || ''
+  const canDeletePublished =
+    Boolean(deleteSlug) && githubReady && !publishBusy && !deleteBusy
+
+  const handleConfirmDeletePublished = useCallback(async () => {
+    if (!canDeletePublished) return
+    setDeleteBusy(true)
+    try {
+      const result = await deletePublishedPost({
+        form: githubSettings,
+        slug: deleteSlug,
+      })
+      pushToast(result.successMessage)
+      if (publishedSource?.path === postRepoPath(deleteSlug)) {
+        setPublishedSource(null)
+      }
+      loadPublishedList().catch(() => {})
+      setDeleteConfirmOpen(false)
+    } catch (err) {
+      if (err instanceof PublishValidationError) {
+        pushToast(err.message)
+      } else {
+        const { friendly } = getFriendlyGithubError(err, 'publish')
+        pushToast(friendly)
+      }
+    } finally {
+      setDeleteBusy(false)
+    }
+  }, [
+    canDeletePublished,
+    githubSettings,
+    deleteSlug,
+    pushToast,
+    publishedSource,
+    loadPublishedList,
+  ])
 
   const openPublishDialog = useCallback(() => {
     setPublishDialogKey((k) => k + 1)
@@ -525,6 +573,16 @@ export default function App() {
                 'New draft — nothing saved on this computer yet. Use Save draft when you want a backup.'
               )}
             </p>
+            <div className="post-meta__actions">
+              <button
+                type="button"
+                className="btn btn--danger btn--small"
+                disabled={!canDeletePublished}
+                onClick={() => setDeleteConfirmOpen(true)}
+              >
+                Delete Published Post
+              </button>
+            </div>
           </div>
           <section className="editor-section" aria-label="Post body">
             {mode === 'visual' ? (
@@ -570,6 +628,13 @@ export default function App() {
         initialSettings={githubSettings}
         onPublish={handlePublish}
         onSaveSettings={handleSaveGithubSettings}
+      />
+      <DeletePublishedPostDialog
+        open={deleteConfirmOpen}
+        slug={deleteSlug || 'post'}
+        busy={deleteBusy}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={() => void handleConfirmDeletePublished()}
       />
       <HelpPage open={helpOpen} onClose={() => setHelpOpen(false)} />
       {blogIndexOpen ? (

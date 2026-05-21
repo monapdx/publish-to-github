@@ -219,3 +219,28 @@ export async function upsertFile({
   await throwUnlessOk(res)
   return res.json()
 }
+
+/**
+ * Delete a file from the repo (requires the file SHA).
+ * @param {{ token: string, owner: string, repo: string, path: string, branch: string, message: string, sha: string }} opts
+ */
+export async function deleteFile({ token, owner, repo, path, branch, message, sha }) {
+  if (!sha) {
+    throw new GitHubApiError('Cannot delete file without SHA', { status: 0 })
+  }
+  const url = `${API}/repos/${owner}/${repo}/contents/${encodeRepoPath(path)}`
+  const res = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      ...headers(token),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      message,
+      sha,
+      branch: branch || 'main',
+    }),
+  })
+  await throwUnlessOk(res)
+  return res.json()
+}

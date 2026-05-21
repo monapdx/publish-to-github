@@ -4,6 +4,7 @@ import {
   MARKER_END,
   analyzeIndexMarkers,
   addBlogSectionIfNeeded,
+  removeCardBySlug,
   tryUpdateIndexWithCard,
 } from '../blogIndex'
 
@@ -69,6 +70,45 @@ describe('tryUpdateIndexWithCard', () => {
     })
     expect(r.updated).toBe(false)
     expect(r.reason).toMatch(/empty/i)
+  })
+})
+
+describe('removeCardBySlug', () => {
+  const cardA =
+    '<article class="nb-card nb-stack-sm" data-slug="my-post"><a href="posts/my-post.html">A</a></article>'
+  const cardB =
+    '<article class="nb-card nb-stack-sm" data-slug="other"><a href="posts/other.html">B</a></article>'
+
+  it('removes card by data-slug', () => {
+    const indexHtml = `${MARKER_START}\n${cardA}\n${cardB}\n${MARKER_END}`
+    const r = removeCardBySlug(indexHtml, 'my-post')
+    expect(r.removed).toBe(true)
+    expect(r.html).not.toContain('data-slug="my-post"')
+    expect(r.html).toContain('data-slug="other"')
+  })
+
+  it('removes card by href fallback', () => {
+    const card = '<article class="nb-card"><a href="posts/href-only.html">Only href</a></article>'
+    const indexHtml = `${MARKER_START}\n${card}\n${cardB}\n${MARKER_END}`
+    const r = removeCardBySlug(indexHtml, 'href-only')
+    expect(r.removed).toBe(true)
+    expect(r.html).not.toContain('href-only.html')
+    expect(r.html).toContain('data-slug="other"')
+  })
+
+  it('does not remove other cards', () => {
+    const indexHtml = `${MARKER_START}\n${cardA}\n${cardB}\n${MARKER_END}`
+    const r = removeCardBySlug(indexHtml, 'missing-slug')
+    expect(r.removed).toBe(false)
+    expect(r.html).toBe(indexHtml)
+    expect(r.html).toContain('data-slug="my-post"')
+    expect(r.html).toContain('data-slug="other"')
+  })
+
+  it('returns removed false when no match found', () => {
+    const r = removeCardBySlug(`${MARKER_START}\n${cardB}\n${MARKER_END}`, 'absent')
+    expect(r.removed).toBe(false)
+    expect(r.reason).toMatch(/No post card found/)
   })
 })
 

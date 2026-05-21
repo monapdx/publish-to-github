@@ -1,4 +1,6 @@
+import { postHref } from './blogPaths'
 import { hasUnreplacedPlaceholders } from './templatePlaceholders'
+import { slugify } from './slugify'
 
 /** Primary markers for the post listing on blog/index.html */
 export const MARKER_START = '<!-- BLOG_POSTS_START -->'
@@ -130,6 +132,48 @@ function cardMatchesHref(block, href) {
 /** Drop sample or broken cards that still contain {{TITLE}}, {{excerpt}}, etc. */
 export function isUnrenderedPlaceholderCard(block) {
   return hasUnreplacedPlaceholders(block)
+}
+
+/**
+ * Remove a post card from index HTML by data-slug or posts/{slug}.html href.
+ * @returns {{ html: string, removed: boolean, reason: string }}
+ */
+export function removeCardBySlug(indexHtml, slug) {
+  const normalizedSlug = slugify(String(slug ?? '').trim())
+  if (!normalizedSlug) {
+    return {
+      html: String(indexHtml ?? ''),
+      removed: false,
+      reason: 'Slug is empty.',
+    }
+  }
+
+  const href = postHref(normalizedSlug)
+  const source = String(indexHtml ?? '')
+  const articleRe = /<article\b[\s\S]*?<\/article>/gi
+  let removed = false
+
+  const html = source.replace(articleRe, (block) => {
+    if (cardMatchesSlug(block, normalizedSlug) || cardMatchesHref(block, href)) {
+      removed = true
+      return ''
+    }
+    return block
+  })
+
+  if (!removed) {
+    return {
+      html: source,
+      removed: false,
+      reason: `No post card found for slug "${normalizedSlug}".`,
+    }
+  }
+
+  return {
+    html,
+    removed: true,
+    reason: `Removed post card for slug "${normalizedSlug}".`,
+  }
 }
 
 /**
