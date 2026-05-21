@@ -20,10 +20,9 @@ import { deletePublishedPost } from './lib/deletePublishedPost'
 import { PublishValidationError } from './lib/publishTemplates'
 import { postHref, postRepoPath } from './lib/blogPaths'
 import {
-  buildOptimisticPublishedFile,
   filterVisiblePublishedPosts,
+  mergeRepoPublishedWithLocal,
   pruneRecentlyDeletedSlugs,
-  upsertPublishedPost,
   withoutDeletedPost,
 } from './lib/publishedPosts'
 import { PostTemplatePanel } from './components/PostTemplatePanel'
@@ -138,7 +137,7 @@ export default function App() {
           branch: githubSettings.branch?.trim() || 'main',
         })
         const sorted = [...files].sort((a, b) => a.name.localeCompare(b.name))
-        setPublishedFiles(sorted)
+        setPublishedFiles((current) => mergeRepoPublishedWithLocal(current, sorted))
         setRecentlyDeletedSlugs((prev) => pruneRecentlyDeletedSlugs(prev, sorted))
         return sorted
       } catch (err) {
@@ -414,29 +413,41 @@ export default function App() {
         const publishedDraftId = draftId
         const s = slug.trim() || slugify(title) || 'post'
         const path = postRepoPath(s)
+        const currentSlug = s
         const result = await publishPostAndIndex({
           form,
           path,
-          slug: s,
+          slug: currentSlug,
           title,
           content,
           excerpt,
           category,
           categoryClass: 'nb-bg-pink',
         })
+        console.log('Publish result:', result)
         setIndexHomeBanner(result.indexHomeBanner)
 
-        const publishedItem = buildOptimisticPublishedFile({
-          slug: result.slug,
-          title: result.title,
-          excerpt: result.excerpt,
-          category: result.category,
-          path: result.postPath,
-          url: result.url,
-          publishedAt: result.publishedAt,
+        const publishedPost = {
+          slug: result.slug || currentSlug,
+          title: result.title || title,
+          excerpt: result.excerpt ?? excerpt,
+          category: result.category ?? category,
+          path: result.postPath || result.path || postRepoPath(currentSlug),
+          url: result.url || postHref(currentSlug),
+          publishedAt: result.publishedAt || new Date().toISOString(),
+          name: `${result.slug || currentSlug}.html`,
+          sha: null,
+        }
+        console.log('Optimistic published post:', publishedPost)
+        console.log('Updating publishedPosts after publish')
+
+        setPublishedFiles((posts) => {
+          const withoutExisting = posts.filter(
+            (post) => post.slug !== publishedPost.slug && post.path !== publishedPost.path,
+          )
+          return [publishedPost, ...withoutExisting]
         })
-        setPublishedFiles((posts) => upsertPublishedPost(posts, publishedItem))
-        setRecentlyDeletedSlugs((prev) => prev.filter((deleted) => deleted !== result.slug))
+        setRecentlyDeletedSlugs((prev) => prev.filter((deleted) => deleted !== publishedPost.slug))
         setListTab('published')
 
         if (result.workflowWarning) pushToast(result.workflowWarning)

@@ -147,6 +147,7 @@ export async function publishPostAndIndex({
     indexUpdateReason: indexResult.reason ?? 'Card inserted between BLOG_POSTS markers.',
     indexPath,
     postPath: path,
+    path,
     slug,
     title: safeTitle,
     excerpt: String(excerpt ?? '').trim(),
