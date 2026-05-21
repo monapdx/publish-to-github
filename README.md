@@ -1,4 +1,4 @@
-# 🧱 Pub2Hub — Neo-Brutalist Blog Editor for GitHub
+# Pub2Hub — Neo-Brutalist Blog Editor for GitHub
 
 **Write posts. Click publish. Done.**  
 No CMS. No backend. No subscriptions.
@@ -6,139 +6,233 @@ No CMS. No backend. No subscriptions.
 👉 Live demo: https://monapdx.github.io/publish-to-github/  
 👉 Get it on Gumroad: [Get It Now](https://ashpdx.gumroad.com/l/lvsnmfb)
 
+![Pub2Hub editor overview](assets/neo-butalist-blog-editor-github.png)
+
+A browser-based editor that publishes **plain HTML** straight into **your** GitHub repository. Posts live as files you own; GitHub Pages serves the `blog/` folder as your site.
+
 ---
 
-**A browser-based editor that publishes directly to your GitHub repo as HTML files.**
+## Quick overview
 
-No dashboards.  
-No lock-in.  
-No middleman.
+| Step | What happens |
+|------|----------------|
+| 1 | Connect GitHub (username, repo, branch, token) — saved in **this browser only** |
+| 2 | Write in Visual or Code mode; **Save draft** keeps a local backup |
+| 3 | **Publish** creates/updates `blog/posts/{slug}.html` and updates `blog/index.html` |
+| 4 | First publish bootstraps `blog/`, styles, and a GitHub Actions workflow |
+| 5 | Enable **Settings → Pages → GitHub Actions** once, then visit your site URL |
 
-Just files → in your repo → under your control.
+The **Published** sidebar updates immediately after publish or delete (optimistic UI). It reads from the **GitHub repo API**, not the live Pages URL, so deployment lag does not hide new posts.
 
-## Download and run on Windows (simple steps)
+---
 
-You do **not** need to know how to code. You do need a free tool called **Node.js** (the installer adds a program called `npm` that the editor uses).
+## Download and run on Windows
 
-1. **Download** this project as a ZIP from GitHub (green **Code** button → **Download ZIP**).
-2. **Extract** the ZIP somewhere easy to find, like your Desktop or Documents folder.
-3. **Install Node.js** (once per computer) from [https://nodejs.org/](https://nodejs.org/) if you have not already. Choose the **LTS** version and accept the defaults.
-4. **Double-click `install.bat`** inside the project folder. A black window will open, download pieces the app needs, then pause so you can read any messages. If something fails, the window stays open on purpose.
-5. **Double-click `start.bat`**. Keep that window open. Your web browser should open the editor automatically (often at `http://localhost:5173/`). If it does not, read the line in that window that starts with `http://localhost`.
-6. On first launch, a **welcome** screen asks for your GitHub username, repository name, branch, and personal access token. Those details are saved in this browser only after a successful save. Open **Getting Started** from the welcome screen or **Help** from the top bar later for plain-language steps, token guidance, and how **homepage markers** work.
+You need **Node.js** (LTS from [nodejs.org](https://nodejs.org/)) once per computer.
 
-To stop the editor, close the browser tab and close the black `start.bat` window (or press Ctrl+C in that window).
+1. Download this repo (ZIP or clone).
+2. Extract to a folder you can find (Desktop, Documents, etc.).
+3. Double-click **`install.bat`** — wait until it finishes.
+4. Double-click **`start.bat`** — keep the window open; the browser opens the editor (usually `http://localhost:5173/`).
 
-## 👀 Who this is for
+![Windows command prompt when running install/start](assets/command-prompt-windows.png)
 
-You’ll probably like this if you:
+On first launch, the **welcome** screen asks for GitHub connection details. Use **Help** in the top bar anytime for token steps, blog layout, and troubleshooting.
 
-- hate CMS platforms  
-- prefer files over platforms  
-- already use GitHub (or want to)  
-- want full control over your content  
-- don’t want another subscription  
+To stop: close the browser tab and the `start.bat` window (or Ctrl+C in that window).
 
-Not for everyone—and that’s intentional.
+---
 
-## 🚫 What this is NOT
+## Who this is for
+
+- You want **files in a repo**, not a hosted CMS  
+- You use (or want) **GitHub** and **GitHub Pages**  
+- You like a **visual editor** but want **raw HTML** when needed  
+- You do not want another subscription or platform lock-in  
+
+## What this is not
 
 - Not a hosted blogging platform  
-- Not trying to replace WordPress  
+- Not WordPress-in-a-box  
+- Not a general static-site generator — layout is **fixed** under `blog/`  
 
-It’s a **tool**, not a platform.
+---
 
-## What You Actually Get
+## Blog layout (fixed)
 
-| 📝 Editor | 🛠️ Toolbar | 📌 Publishing | 📚 Sidebar |
-|--------|--------|------------|---------|
-| Easy toggle to switch from the visual editor to direct source code editing<br><sub>Main editing interface</sub> | Offers everything you need (images, media upload, tables, links, text formatting, code snippets, and more)<br><sub>Formatting tools</sub> | Click to publish to a specific folder in your repo. It will create or update the post file on your branch<br><sub>Publish to GitHub</sub> | Easily toggle between drafts and published posts in the sidebar<br><sub>Drafts & posts</sub> | |
+Every publish uses the same structure:
+
+```text
+blog/
+  index.html          ← homepage + post cards
+  style.css
+  .nojekyll
+  posts/
+    my-post.html      ← one file per post
+.github/workflows/deploy-blog-pages.yml   ← added on first publish
+```
+
+Bundled templates (in the app, not uploaded as a folder):
+
+- `templates/post-page-template.html` — full post pages  
+- `templates/post-card-template.html` — cards on the homepage  
+- `templates/index.html` — starter homepage design  
+
+Homepage listing uses marker comments (invisible on the public site):
+
+```html
+<!-- BLOG_POSTS_START -->
+<!-- BLOG_POSTS_END -->
+```
+
+New cards are inserted between these markers (newest first). Code view includes tools to check markers and edit homepage HTML.
+
+---
+
+## Editor
+
+### Visual and Code modes
+
+![Visual and Code editors](assets/visual-code-editors.gif)
+
+- **Visual** — [TipTap](https://tiptap.dev/) v3: headings, lists, quotes, links, images, tables, code blocks, undo/redo. **Ctrl/Cmd+S** saves the current draft.  
+- **Code** — raw HTML for the post body, plus an optional **post template** panel (advanced sections collapsed by default).
 
 ### Toolbar
 
-<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/text-format-zoomed.gif">
+![Editor toolbar](assets/toolbar.png)
 
-- **Visual mode:** [TipTap](https://tiptap.dev/) v3 (ProseMirror) with headings (H1–H3), paragraph, bold, italic, underline, bullet and ordered lists, blockquote, horizontal rule, links, and undo/redo. **Ctrl/Cmd+S** saves the current draft (same as **Save draft**).
+| Feature | Screenshot |
+|---------|------------|
+| Text formatting | ![Text formatting](assets/text-format-zoomed.gif) |
+| Insert table | ![Insert table](assets/insert-table.png) |
+| Upload media | ![Upload media](assets/upload-media.png) |
+| Code snippet | ![Insert snippet](assets/insert-snippet.png) |
+| Image | ![Insert image](assets/insert-image.png) |
 
-- **Code mode:** plain `textarea` for the post body HTML. In Code view you can also edit the **post template** (placeholders like `{{title}}` / `{{content}}`) and open **Edit homepage** to work on `blog/index.html`.
+Tables support add/remove rows and columns. Images support URL or file upload (data URL in drafts), alt text, size, and alignment. Code snippets export as normal `<pre><code>` blocks.
 
-<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/assets/visual-code-editors.gif" width="732">
+### Post meta
 
-- **Tables:** insert a sized table (header row), then add/remove rows and columns or remove the whole table while the cursor is inside the table.
+Under the title: collapsible **slug, excerpt, and category**. Excerpt and category can appear on homepage cards and in optional `blog-editor:*` meta tags for round-trip editing.
 
-<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/assets/insert-table.png">
+### Code view — templates (advanced)
 
-- **Upload Media:**
+![Post template and homepage tools in Code mode](assets/post-template-editor.png)
 
-<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/assets/upload-media.png">
+Publishing always uses the **bundled** post page and card templates. Code view is for preview, optional local template tweaks, loading `blog/index.html` from GitHub, and editing homepage/listing HTML in collapsed **Advanced** sections. See in-app **Help** for placeholders and markers.
 
-- **Code snippets:** insert a multiline snippet from a dialog; optional language label becomes a `language-*` class on `<code>`. In Visual mode the block is styled with decorative triple-backtick lines; exported HTML is a normal `<pre><code>` block.
+---
 
-<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/assets/insert-snippet.png">
+## Sidebar: Drafts and Published
 
-- **Images:** paste a URL or upload a file (embedded as a data URL in the draft). Alt text, width, height, and alignment classes (`blog-image align-*`) are supported.
+### Drafts (local)
 
-<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/assets/insert-image.png">
+![Drafts sidebar](assets/sidebar-drafts.png)
 
+- Stored in **browser `localStorage`** on this computer only  
+- **New**, open, delete, **Save draft**, and idle **autosave**  
+- Clear message if storage is full  
 
+### Published (GitHub)
 
+![Published sidebar](assets/published-sidebar.png)
 
-### Sidebar
+- Lists `.html` files in `blog/posts/` via the **GitHub Contents API**  
+- **Refresh** reloads from the repo (button shows “Refreshing…”, toast on success or error)  
+- Open a post to edit and publish again (same file path)  
+- **Delete Published Post** removes the file and homepage card (with confirmation); sidebar updates immediately  
+- After publish, the new/updated post appears at the top **without** waiting for Pages deployment  
 
-- Switch between **Drafts** (local) and **Published** (files in `blog/posts/` on GitHub).
+Opening a published file **sanitizes** body HTML (DOMPurify) before loading into the editor.
 
-- **Drafts**: create, open, delete; **Save draft** in the header (open drafts also **autosave** after a short idle delay). If the browser’s storage is full, you’ll see a clear message instead of a silent failure.
+---
 
-- **Published**: requires owner, repo, and token in **Publish**; lists `.html` files in `blog/posts/`, refresh, and open a file into the editor. Title, excerpt, category, and body are parsed from the page; `blog-editor:title` / `blog-editor:excerpt` / `blog-editor:category` meta tags are used when present for a reliable round-trip after you publish from this app. When opening a file from GitHub, the post body HTML is **sanitized** before it is loaded into the editor (reduces risk from hostile markup while keeping normal writing tags).
+## Publishing
 
-### Publishing
+![Publish connection dialog is opened from the header Publish button](assets/Pub2Hub.png)
 
-- **Connection & publish** opens a dialog: personal access token, GitHub username, repository, branch, and shortcuts to the same help you see on first run.
+1. Click **Publish** in the header.  
+2. Confirm username, repository, branch, and personal access token.  
+3. Click **Publish to GitHub**.
 
-- Publishes to a fixed layout: `blog/index.html`, `blog/style.css`, `blog/posts/{slug}.html`, plus `.github/workflows/deploy-blog-pages.yml` for GitHub Pages on first publish.
+The app will:
 
-- **Excerpt** and **category** are stored in published HTML (meta tags) when you fill them in; they are included in new publishes alongside title and body. Optional **slug** (and excerpt/category) live in a collapsible block under the title in the editor.
+- Bootstrap `blog/` and the Pages workflow on first publish  
+- Write `blog/posts/{slug}.html` from the bundled post template  
+- Fetch `blog/index.html`, insert or update the post card between markers, and save  
+- Show a clear error if the post saved but the index could not be updated  
 
-- **Homepage (`blog/index.html`):** after a successful publish, the app can insert a “post card” into the index **only if** it contains `<!-- BLOG_POSTS_START -->` and `<!-- BLOG_POSTS_END -->` (legacy marker variants are still recognized). If markers are missing or invalid, your post file is still published and you’ll see a banner with a button to **Edit homepage**. GitHub API errors during index updates are explained in plain language; the post file remains saved.
+**One-time:** In the repo on GitHub, open **Settings → Pages** and set **Build and deployment** source to **GitHub Actions**, then run **Deploy blog to GitHub Pages** under the Actions tab.
 
-- Settings are saved in your browser (`localStorage`) when you click **Save connection settings** and the save succeeds, or after a successful publish (with a warning toast if the browser cannot store settings). The welcome screen only continues after settings save successfully.
+Connection settings save to `localStorage` after a successful publish or **Save connection settings**.
 
-### Mobile Screenshot
+---
 
-<img src="https://raw.githubusercontent.com/monapdx/publish-to-github/refs/heads/main/assets/mobile.png">
+## Help
 
-### Stack
+**Help** in the header opens a short, scannable guide:
 
-- React 19, Vite 8, ESLint 9, Vitest (unit tests), DOMPurify (sanitize published HTML when opening)
-- TipTap extensions: StarterKit (minus bundled link, replaced), Link, Underline, Image, Placeholder, Table (+ row / cell / header)
+- **Quick start** (always visible)  
+- Collapsible sections: blog structure, token setup, editing published posts, common problems, advanced details  
 
+No account data is sent to a third-party server — only GitHub’s API, using your token from the browser.
 
-## Setup
+---
+
+## Mobile
+
+![Mobile layout](assets/mobile.png)
+
+Usable on smaller screens; writing and publishing are easiest on desktop.
+
+---
+
+## Developers
 
 ```bash
 npm install
 npm run dev
 ```
 
-## GitHub token
+![Dev server in terminal](assets/npm-run-dev.png)
 
-Use a **fine-grained** or **classic** personal access token that can **read** repository contents (to list and open published posts) and **write** contents (to publish), scoped to the repo you use. The token stays in your browser on this computer after you save connection settings successfully or publish (if storage allows).
+| Script | Purpose |
+|--------|---------|
+| `npm run dev` | Local dev server (Vite) |
+| `npm run build` | Production build |
+| `npm run preview` | Preview production build |
+| `npm run lint` | ESLint |
+| `npm test` | Vitest (blog index, publish helpers, sanitization, GitHub messages) |
 
-## Scripts
+CI runs lint, tests, and build on push/PR (`.github/workflows/ci.yml`).
 
-- `npm run dev` — local dev server
-- `npm run build` — production build
-- `npm run preview` — preview the production build
-- `npm run lint` — ESLint
-- `npm test` — Vitest unit tests (blog index helpers, GitHub error copy, HTML sanitization)
+### GitHub token
 
-Contributors: CI runs lint, tests, and build on pushes and pull requests (see `.github/workflows/ci.yml`).
+**Fine-grained (recommended)** on the target repo:
+
+- **Contents** — Read and write  
+- **Metadata** — Read-only  
+- **Workflows** — Read and write (first publish adds the deploy workflow)  
+
+**Classic** alternative: `repo` scope (`ghp_…`).
+
+Use the repo **owner** (your username or org name), not a personal username for an org-owned repo.
+
+---
+
+## Stack
+
+- React 19, Vite 8, ESLint 9, Vitest  
+- TipTap 3 (StarterKit, Link, Underline, Image, Placeholder, Table)  
+- DOMPurify when opening published HTML  
+- GitHub REST API for file create/update/delete and directory listing  
+
+---
 
 ## Why this exists
 
-- No databases
-- No dashboards
-- No subscriptions
-- Just files in your repo
-
-**Write → Save locally → Publish to GitHub**
+- No database  
+- No dashboard lock-in  
+- No subscription — you pay for the tool once if you buy on Gumroad  
+- **Write → Save locally → Publish to GitHub → Files you control**
