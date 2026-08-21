@@ -1,5 +1,3 @@
-import { MARKER_BLOCK_SNIPPET } from '../lib/blogIndex'
-
 function HelpDetails({ title, children, defaultOpen = false }) {
   return (
     <details className="help-details" open={defaultOpen || undefined}>
@@ -35,125 +33,57 @@ export function HelpPage({ open, onClose }) {
             </h3>
             <ol className="help-checklist">
               <li>
-                <strong>Connect GitHub</strong> — welcome screen or <strong>Publish</strong> (username, repo, token).
+                <strong>Write a post</strong> — add a title and body in Visual or Code mode.
               </li>
               <li>
-                <strong>Write a post</strong> — title and body in the editor.
+                <strong>Save draft</strong> — keeps a local backup in this browser (<strong>Ctrl/Cmd+S</strong> works
+                too). Open drafts are autosaved after a short pause.
               </li>
               <li>
-                <strong>Click Publish</strong> — confirm connection, then <strong>Publish to GitHub</strong>.
+                <strong>Export draft</strong> — downloads a Markdown file with <code>status: draft</code> in the
+                frontmatter.
               </li>
               <li>
-                <strong>Enable Pages</strong> (first publish only) — repo <strong>Settings → Pages → GitHub Actions</strong>.
-              </li>
-              <li>
-                <strong>Visit your site</strong> — URL on the Pages settings screen after the deploy workflow runs.
+                <strong>Export final</strong> — downloads clean Markdown and stores a copy under the{' '}
+                <strong>Finals</strong> sidebar tab.
               </li>
             </ol>
           </section>
 
-          <HelpDetails title="Blog structure">
-            <pre className="help-tree" aria-label="Blog folder layout">{`blog/
-  index.html
-  style.css
-  posts/
-    my-post.html`}</pre>
+          <HelpDetails title="Markdown export">
             <p>
-              Posts are saved as normal HTML files and listed automatically on the homepage.
+              Exports include YAML frontmatter (title, slug, excerpt, category, status, updated date) followed by the
+              post body converted from HTML.
+            </p>
+            <p>
+              Draft files are named like <code>my-post-draft.md</code>. Final files use <code>my-post.md</code>.
             </p>
           </HelpDetails>
 
-          <HelpDetails title="GitHub token setup">
-            <p className="help-lead">Need help creating a token?</p>
+          <HelpDetails title="Visual and Code modes">
             <p>
-              <strong>Fine-grained (recommended)</strong> — Settings → Developer settings → Personal access tokens →
-              Fine-grained → generate for <strong>only your repo</strong>.
+              <strong>Visual</strong> uses TipTap for headings, lists, links, images, tables, and code blocks.{' '}
+              <strong>Code</strong> edits the raw HTML for the post body.
             </p>
+          </HelpDetails>
+
+          <HelpDetails title="Where data lives">
+            <p>
+              Drafts and final versions are stored in <strong>localStorage</strong> on this computer only. Nothing is
+              sent to a server unless you share the exported files yourself.
+            </p>
+            <p>
+              Clearing site data in your browser removes local drafts and finals. Export Markdown copies you want to
+              keep.
+            </p>
+          </HelpDetails>
+
+          <HelpDetails title="Keyboard shortcuts">
             <ul className="help-list help-list--bullets">
               <li>
-                <strong>Contents</strong>: Read and write
-              </li>
-              <li>
-                <strong>Metadata</strong>: Read-only
-              </li>
-              <li>
-                <strong>Workflows</strong>: Read and write (so the deploy workflow can be added)
+                <strong>Ctrl/Cmd+S</strong> — save draft locally
               </li>
             </ul>
-            <p>
-              <strong>Username</strong> must match the repo owner (your account or the org name, not your personal name
-              for an org repo). Paste the token once — no extra spaces.
-            </p>
-            <p>
-              <strong>Classic fallback</strong> — Tokens (classic) with the <strong>repo</strong> scope (<code>ghp_</code>
-              ).
-            </p>
-          </HelpDetails>
-
-          <HelpDetails title="Editing existing posts">
-            <ol className="help-list">
-              <li>Open the sidebar <strong>Published</strong> tab.</li>
-              <li>Select the post to load it.</li>
-              <li>Edit title, body, or slug.</li>
-              <li>
-                <strong>Publish</strong> again — the same file on GitHub is updated.
-              </li>
-            </ol>
-          </HelpDetails>
-
-          <HelpDetails title="Common problems">
-            <dl className="help-issues">
-              <div>
-                <dt>Repository not found</dt>
-                <dd>
-                  Check username and repo name spelling. The repo must already exist on GitHub.
-                </dd>
-              </div>
-              <div>
-                <dt>Token permissions</dt>
-                <dd>
-                  Use a fresh token with Contents (and Workflows) on this repo. Open <strong>Details</strong> in the
-                  Publish dialog for GitHub’s exact error.
-                </dd>
-              </div>
-              <div>
-                <dt>Workflow / Pages deployment</dt>
-                <dd>
-                  After first publish, set Pages source to <strong>GitHub Actions</strong> and run{' '}
-                  <strong>Deploy blog to GitHub Pages</strong> under Actions.
-                </dd>
-              </div>
-              <div>
-                <dt>Missing homepage markers</dt>
-                <dd>
-                  Add <code>BLOG_POSTS_START</code> and <code>BLOG_POSTS_END</code> in <code>blog/index.html</code> so
-                  new posts appear on the homepage. Use Code view → advanced homepage tools to check.
-                </dd>
-              </div>
-            </dl>
-          </HelpDetails>
-
-          <HelpDetails title="Advanced details">
-            <p>
-              <strong>Marker comments</strong> — invisible HTML comments that tell the app where to insert post cards
-              (newest first):
-            </p>
-            <pre className="help-tree">{MARKER_BLOCK_SNIPPET}</pre>
-            <p>
-              <strong>Templates</strong> — bundled under <code>templates/</code> (post page, post card, index design).
-              Publish uses those files; Code view is for optional customization.
-            </p>
-            <p>
-              <strong>Workflow</strong> — <code>.github/workflows/deploy-blog-pages.yml</code> deploys the{' '}
-              <code>blog/</code> folder to GitHub Pages.
-            </p>
-            <pre className="help-tree" aria-label="Full generated layout">{`blog/
-  index.html
-  style.css
-  .nojekyll
-  posts/
-    your-slug.html
-.github/workflows/deploy-blog-pages.yml`}</pre>
           </HelpDetails>
         </div>
       </div>

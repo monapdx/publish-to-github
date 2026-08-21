@@ -2,20 +2,14 @@ export function DraftList({
   listTab,
   onListTabChange,
   drafts,
+  finals,
   currentDraftId,
+  currentFinalId,
   onOpenDraft,
+  onOpenFinal,
   onDeleteDraft,
+  onDeleteFinal,
   onNew,
-  publishedFiles,
-  publishedLoading,
-  publishedRefreshing = false,
-  publishedError,
-  publishedErrorDetail,
-  currentPublishedPath,
-  onOpenPublished,
-  onRefreshPublished,
-  githubReady,
-  onOpenPublishSettings,
 }) {
   const isDrafts = listTab === 'drafts'
 
@@ -36,9 +30,9 @@ export function DraftList({
           role="tab"
           aria-selected={!isDrafts}
           className={`draft-list__tab ${!isDrafts ? 'is-active' : ''}`}
-          onClick={() => onListTabChange('published')}
+          onClick={() => onListTabChange('finals')}
         >
-          Published
+          Finals
         </button>
       </div>
 
@@ -86,73 +80,44 @@ export function DraftList({
       ) : (
         <>
           <div className="draft-list__header">
-            <h2>On GitHub</h2>
-            <button
-              type="button"
-              className="btn btn--small btn--ghost"
-              onClick={() => onRefreshPublished()}
-              disabled={!githubReady || publishedLoading || publishedRefreshing}
-            >
-              {publishedRefreshing ? 'Refreshing…' : 'Refresh'}
-            </button>
+            <h2>Final versions</h2>
           </div>
-          {!githubReady ? (
+          {finals.length === 0 ? (
             <p className="draft-list__empty">
-              Connect GitHub with <strong>Publish</strong> in the top bar (or finish the welcome setup) to list HTML
-              posts from your repo.
-            </p>
-          ) : publishedLoading && !publishedRefreshing ? (
-            <p className="draft-list__empty">Loading your published posts from GitHub…</p>
-          ) : publishedError && publishedFiles.length === 0 ? (
-            <div className="draft-list__empty draft-list__error">
-              <p>{publishedError}</p>
-              {publishedErrorDetail ? (
-                <details className="draft-list__empty--detail">
-                  <summary>Details for troubleshooting</summary>
-                  <pre>{publishedErrorDetail}</pre>
-                </details>
-              ) : null}
-            </div>
-          ) : publishedFiles.length === 0 ? (
-            <p className="draft-list__empty">
-              No HTML posts found in <code>blog/posts/</code> yet. After you publish once, files appear here. If you
-              expected files already, check your <strong>branch</strong> under{' '}
-              <button type="button" className="draft-list__link" onClick={onOpenPublishSettings}>
-                Publish
-              </button>
-              .
+              No final versions yet. When a post is ready, use <strong>Export final</strong> in the top bar to download
+              Markdown and keep a local copy here.
             </p>
           ) : (
-            <>
-              {publishedError ? (
-                <p className="draft-list__empty draft-list__error draft-list__error--inline">{publishedError}</p>
-              ) : null}
-              <ul className="draft-list__items draft-list__items--published">
-              {publishedFiles.map((f) => (
-                <li key={f.path}>
+            <ul className="draft-list__items draft-list__items--published">
+              {finals.map((row) => (
+                <li key={row.id}>
                   <button
                     type="button"
-                    className={`draft-item ${f.path === currentPublishedPath ? 'is-active' : ''}`}
-                    onClick={() => onOpenPublished(f.path)}
+                    className={`draft-item ${row.id === currentFinalId ? 'is-active' : ''}`}
+                    onClick={() => onOpenFinal(row.id)}
                   >
-                    <span className="draft-item__title">{displayFileName(f)}</span>
-                    <span className="draft-item__meta">{f.path}</span>
+                    <span className="draft-item__title">{row.title || '(Untitled)'}</span>
+                    <span className="draft-item__meta">{formatDate(row.finalizedAt || row.updatedAt)}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="draft-item__delete"
+                    aria-label={`Delete final ${row.title || row.id}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDeleteFinal(row.id)
+                    }}
+                  >
+                    ×
                   </button>
                 </li>
               ))}
-              </ul>
-            </>
+            </ul>
           )}
         </>
       )}
     </aside>
   )
-}
-
-function displayFileName(file) {
-  if (file?.title) return String(file.title)
-  const n = String(file?.name || '')
-  return n.replace(/\.html$/i, '') || n || '(untitled)'
 }
 
 function formatDate(iso) {
