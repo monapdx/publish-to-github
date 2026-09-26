@@ -9,6 +9,7 @@ import {
   upsertPublishedPost,
   withoutDeletedPost,
 } from '../publishedPosts'
+import { removeCardBySlug } from '../blogIndex'
 
 describe('publishedPosts helpers', () => {
   const posts = [
@@ -76,5 +77,12 @@ describe('publishedPosts helpers', () => {
       'gone',
     ])
     expect(pruneRecentlyDeletedSlugs(['gone'], [{ name: 'keep.html', path: 'blog/posts/keep.html' }])).toEqual([])
+  })
+
+  it('removes a legacy root-level post card by its link', () => {
+    const index = '<article class="nb-card"><a href="old.html">Old</a></article>'
+    const result = removeCardBySlug(index, 'old')
+    expect(result.removed).toBe(true)
+    expect(result.html).not.toContain('old.html')
   })
 })
