@@ -22,6 +22,8 @@ export async function publishPostAndIndex({
   excerpt,
   category,
   categoryClass,
+  templateHtml,
+  stylesheets,
 }) {
   let token = form.token.trim()
   let owner = form.owner.trim()
@@ -57,7 +59,7 @@ export async function publishPostAndIndex({
     categoryClass: categoryClass || 'nb-bg-pink',
   })
 
-  const postHtml = renderPostPageHtml(templateData)
+  const postHtml = renderPostPageHtml(templateData, { templateHtml, stylesheets })
   const cardHtml = renderPostCardHtml(templateData)
   assertNoUnreplacedPlaceholders(cardHtml, 'Post card template')
   assertNoUnreplacedPlaceholders(postHtml, 'Post page template')
