@@ -148,7 +148,12 @@ export async function listPostHtmlFiles({ token, owner, repo, branch }) {
   const q = new URLSearchParams({ ref: branch || 'main' })
   const url = `${API}/repos/${owner}/${repo}/contents/${encodeRepoPath(dir)}?${q}`
   const res = await fetch(url, { headers: headers(token) })
-  if (res.status === 404) return []
+  if (res.status === 404) {
+    throw new GitHubApiError(`Posts folder ${dir} was not found in ${owner}/${repo} on branch ${branch || 'main'}.`, {
+      status: 404,
+      bodyText: await res.text(),
+    })
+  }
   await throwUnlessOk(res)
   const data = await res.json()
   if (!Array.isArray(data)) {
