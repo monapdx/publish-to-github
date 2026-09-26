@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
 import { MARKER_START, MARKER_END } from '../blogIndex'
 import { buildPostTemplateFromIndex, detectSiteIntegration } from '../siteIntegration'
