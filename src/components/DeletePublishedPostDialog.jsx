@@ -1,7 +1,7 @@
-export function DeletePublishedPostDialog({ open, slug, busy, onClose, onConfirm }) {
+export function DeletePublishedPostDialog({ open, slug, path, busy, onClose, onConfirm }) {
   if (!open) return null
 
-  const postFile = `blog/posts/${slug}.html`
+  const postFile = path || `blog/posts/${slug}.html`
 
   return (
     <div className="dialog-backdrop" role="presentation" onMouseDown={onClose}>
