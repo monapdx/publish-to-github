@@ -87,6 +87,20 @@ describe('sample post card', () => {
     expect(page).toContain('<p>Body</p>')
   })
 
+  it('publishes a custom template with additional stylesheets in order', () => {
+    const data = buildPublishTemplateData({ title: 'A & B', content: '<p>Body</p>' })
+    const template = '<!doctype html><html><head><link rel="stylesheet" href="../base.css"></head><body><h1>{{TITLE}}</h1>{{CONTENT}}</body></html>'
+    const page = renderPostPageHtml(data, { templateHtml: template, stylesheets: '../theme.css\nhttps://example.com/a.css?x=1&y=2' })
+    expect(page).toContain('<h1>A &amp; B</h1><p>Body</p>')
+    expect(page.indexOf('../base.css')).toBeLessThan(page.indexOf('../theme.css'))
+    expect(page).toContain('href="https://example.com/a.css?x=1&amp;y=2"')
+  })
+
+  it('rejects unsafe stylesheet URLs', () => {
+    const data = buildPublishTemplateData({ title: 'Title', content: '<p>Body</p>' })
+    expect(() => renderPostPageHtml(data, { stylesheets: 'javascript:alert(1)' })).toThrow('Invalid stylesheet URL')
+  })
+
   it('updates existing card by data-slug instead of duplicating', () => {
     const existingSlug = SAMPLE.slug
     const oldCard = `<article class="nb-card nb-stack-sm" data-slug="${existingSlug}"><h3>Old</h3></article>`
