@@ -36,6 +36,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
     "happy-dom": "^20.10.2",
+    "jsdom": "^26.1.0",
     "vite": "^8.0.9",
     "vitest": "^4.1.8"
   }
