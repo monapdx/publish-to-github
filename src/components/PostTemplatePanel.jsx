@@ -13,10 +13,13 @@ import {
   persistIndexEntryTemplate,
 } from '../lib/indexEntryTemplate'
 import { READ_ONLY_TEMPLATES } from '../lib/readOnlyTemplates'
+import { addStylesheets } from '../lib/customStylesheets'
 
 export function PostTemplatePanel({
   html,
   onHtmlChange,
+  stylesheets,
+  onStylesheetsChange,
   previewContext,
   onPreviewBlocked,
   onTemplateSaved,
@@ -93,7 +96,7 @@ export function PostTemplatePanel({
   function handleSaveTemplate() {
     persistPostTemplate(html)
     persistIndexEntryTemplate(entryTpl)
-    onTemplateSaved?.('Post template saved. This HTML wraps every post when you preview in Code mode.')
+    onTemplateSaved?.('Post template saved. New published posts will use this HTML and your stylesheet links.')
   }
 
   function handlePreview() {
@@ -106,7 +109,18 @@ export function PostTemplatePanel({
       date: new Date().toISOString(),
       templateHtml: html,
     })
-    const blob = new Blob([out], { type: 'text/html;charset=utf-8' })
+    let preview
+    try { preview = addStylesheets(out, stylesheets) }
+    catch (err) { onTemplateSaved?.(err.message); return }
+    const owner = githubSettings?.owner?.trim()
+    const repo = githubSettings?.repo?.trim()
+    const base = owner && repo
+      ? `https://${encodeURIComponent(owner)}.github.io/${encodeURIComponent(repo)}/blog/posts/`
+      : ''
+    const previewHtml = base && /<head\b[^>]*>/i.test(preview)
+      ? preview.replace(/<head\b[^>]*>/i, (match) => `${match}\n    <base href="${base}" />`)
+      : preview
+    const blob = new Blob([previewHtml], { type: 'text/html;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const w = window.open(url, '_blank', 'noopener,noreferrer')
     if (!w) onPreviewBlocked?.()
@@ -140,13 +154,11 @@ export function PostTemplatePanel({
       <div className="post-template__header">
         <h2 id="post-template-heading">Post template</h2>
         <p className="post-template__lede">
-          Publishing uses your <code>blog/index.html</code> shell plus the bundled post template. You only need this
-          screen if you want to customize the generated HTML.
+          Customize the HTML and CSS links used for new published posts. Loading <code>blog/index.html</code> copies
+          its navigation, footer, and stylesheet links into the post template.
         </p>
         <p className="post-template__lede post-template__lede--muted">
-          Bundled publish files: <code>templates/post-page-template.html</code> and{' '}
-          <code>templates/post-card-template.html</code>. Preview below uses the local post template stored in this
-          browser.
+          Settings are saved in this browser. Existing posts keep their current design until you republish them.
         </p>
       </div>
 
@@ -181,12 +193,29 @@ export function PostTemplatePanel({
       </div>
 
       <div className="post-template__advanced">
+        <details className="post-template__disclosure" open>
+          <summary>Additional stylesheets for posts</summary>
+          <div className="post-template__disclosure-body">
+            <p className="post-template__field-hint">
+              One CSS URL per line. Use an HTTPS URL or a path relative to <code>blog/posts/</code>, such as{' '}
+              <code>../my-theme.css</code>. These links are added after the template’s existing stylesheets, so their
+              rules can override earlier ones. Upload local CSS files to your site repository first.
+              Preview resolves relative paths against the standard GitHub Pages address for your repository.
+            </p>
+            <label className="field post-template__label">
+              <span>Stylesheet URLs</span>
+              <textarea className="post-template__textarea" value={stylesheets}
+                onChange={(e) => onStylesheetsChange(e.target.value)} rows={4}
+                placeholder={'../my-theme.css\nhttps://example.com/extra.css'} spellCheck={false} />
+            </label>
+          </div>
+        </details>
         <details className="post-template__disclosure">
           <summary>Advanced: edit post page template</summary>
           <div className="post-template__disclosure-body">
             <p className="post-template__field-hint">
-              Local preview wrapper for Code mode. GitHub publish still uses the bundled{' '}
-              <code>templates/post-page-template.html</code> unless you change that file in the project.
+              This HTML is used for previews and new published posts. Keep <code>{'{{TITLE}}'}</code> and{' '}
+              <code>{'{{CONTENT}}'}</code> placeholders so each post has its own title and body.
             </p>
             <label className="field post-template__label">
               <span className="visually-hidden">Post page HTML template</span>
