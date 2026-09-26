@@ -1,4 +1,4 @@
-import { BLOG_POSTS } from './blogPaths'
+import { BLOG_INDEX, BLOG_POSTS, BLOG_ROOT } from './blogPaths'
 
 const API = 'https://api.github.com'
 
@@ -144,22 +144,26 @@ export async function listRepoDirectory({ token, owner, repo, branch, dirPath = 
 }
 
 export async function listPostHtmlFiles({ token, owner, repo, branch }) {
-  const dir = BLOG_POSTS
   const q = new URLSearchParams({ ref: branch || 'main' })
-  const url = `${API}/repos/${owner}/${repo}/contents/${encodeRepoPath(dir)}?${q}`
-  const res = await fetch(url, { headers: headers(token) })
-  if (res.status === 404) return []
-  await throwUnlessOk(res)
-  const data = await res.json()
-  if (!Array.isArray(data)) {
-    if (data?.type === 'file' && /\.html$/i.test(data.name ?? '')) {
-      return [{ name: data.name, path: data.path, sha: data.sha }]
-    }
-    return []
+  const files = []
+  let foundDirectory = false
+  for (const dir of [BLOG_ROOT, BLOG_POSTS]) {
+    const url = `${API}/repos/${owner}/${repo}/contents/${encodeRepoPath(dir)}?${q}`
+    const res = await fetch(url, { headers: headers(token) })
+    if (res.status === 404) continue
+    await throwUnlessOk(res)
+    foundDirectory = true
+    const data = await res.json()
+    if (!Array.isArray(data)) continue
+    files.push(...data
+      .filter((e) => e?.type === 'file' && typeof e.name === 'string' &&
+        /\.html$/i.test(e.name) && e.path !== BLOG_INDEX)
+      .map((e) => ({ name: e.name, path: e.path, sha: e.sha })))
   }
-  return data
-    .filter((e) => e?.type === 'file' && typeof e.name === 'string' && /\.html$/i.test(e.name))
-    .map((e) => ({ name: e.name, path: e.path, sha: e.sha }))
+  if (!foundDirectory) {
+    throw new GitHubApiError(`No blog folder was found in ${owner}/${repo} on branch ${branch || 'main'}.`, { status: 404 })
+  }
+  return files
 }
 
 /**

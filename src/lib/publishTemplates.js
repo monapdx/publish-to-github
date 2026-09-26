@@ -35,14 +35,14 @@ function formatDate(d = new Date()) {
   }
 }
 
-export function buildPublishTemplateData({ title, slug, content, excerpt, category, categoryClass, date }) {
+export function buildPublishTemplateData({ title, slug, content, excerpt, category, categoryClass, date, url }) {
   const t = String(title ?? '').trim()
   const s = String(slug ?? '').trim() || slugify(t) || 'post'
 
   return {
     TITLE: t || 'Untitled',
     SLUG: s,
-    URL: postHref(s),
+    URL: url || postHref(s),
     DATE: formatDate(date ?? new Date()),
     CATEGORY: String(category ?? '').trim(),
     CATEGORY_CLASS: String(categoryClass ?? '').trim() || 'nb-bg-pink',

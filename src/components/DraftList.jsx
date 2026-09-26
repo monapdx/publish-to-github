@@ -115,7 +115,7 @@ export function DraftList({
             </div>
           ) : publishedFiles.length === 0 ? (
             <p className="draft-list__empty">
-              No HTML posts found in <code>blog/posts/</code> yet. After you publish once, files appear here. If you
+              No HTML posts found in <code>blog/</code> or <code>blog/posts/</code> yet. If you
               expected files already, check your <strong>branch</strong> under{' '}
               <button type="button" className="draft-list__link" onClick={onOpenPublishSettings}>
                 Publish

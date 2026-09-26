@@ -149,12 +149,13 @@ export function removeCardBySlug(indexHtml, slug) {
   }
 
   const href = postHref(normalizedSlug)
+  const rootHref = `${normalizedSlug}.html`
   const source = String(indexHtml ?? '')
   const articleRe = /<article\b[\s\S]*?<\/article>/gi
   let removed = false
 
   const html = source.replace(articleRe, (block) => {
-    if (cardMatchesSlug(block, normalizedSlug) || cardMatchesHref(block, href)) {
+    if (cardMatchesSlug(block, normalizedSlug) || cardMatchesHref(block, href) || cardMatchesHref(block, rootHref)) {
       removed = true
       return ''
     }
