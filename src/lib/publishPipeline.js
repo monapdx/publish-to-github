@@ -1,4 +1,4 @@
-import { BLOG_INDEX, postHref } from './blogPaths'
+import { BLOG_INDEX } from './blogPaths'
 import { fetchRepoFileText, getFileSha, upsertFile, validateGithubConnection } from './github'
 import { getFriendlyGithubError } from './githubFriendlyMessages'
 import { MARKER_END, MARKER_START, tryUpdateIndexWithCard } from './blogIndex'
@@ -50,6 +50,8 @@ export async function publishPostAndIndex({
 
   await bootstrapBlogSite({ token, owner, repo, branch })
 
+  const postUrl = path.startsWith('blog/') ? path.slice('blog/'.length) : path
+
   const templateData = buildPublishTemplateData({
     title: safeTitle,
     slug,
@@ -57,6 +59,7 @@ export async function publishPostAndIndex({
     excerpt,
     category,
     categoryClass: categoryClass || 'nb-bg-pink',
+    url: postUrl,
   })
 
   const postHtml = renderPostPageHtml(templateData, { templateHtml, stylesheets })
@@ -101,7 +104,7 @@ export async function publishPostAndIndex({
     indexHtml,
     cardHtml,
     slug: templateData.SLUG,
-    postHref: postHref(slug),
+    postHref: postUrl,
   })
 
   if (!indexResult.updated) {
@@ -154,7 +157,7 @@ export async function publishPostAndIndex({
     title: safeTitle,
     excerpt: String(excerpt ?? '').trim(),
     category: String(category ?? '').trim(),
-    url: postHref(slug),
+    url: postUrl,
     publishedAt,
     indexHomeBanner: { show: false, text: '' },
     indexErrorToast: null,
