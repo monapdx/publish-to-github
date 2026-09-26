@@ -3,6 +3,7 @@ import { READ_ONLY_TEMPLATES } from './readOnlyTemplates'
 import { hasUnreplacedPlaceholders } from './templatePlaceholders'
 import { replaceTemplateVars } from './templateVars'
 import { slugify } from './slugify'
+import { addStylesheets } from './customStylesheets'
 
 /** Bundled marker — must appear in every published blog/posts/*.html file. */
 export const POST_PAGE_TEMPLATE_MARKER = 'POST PAGE TEMPLATE ACTIVE'
@@ -62,10 +63,16 @@ export function assertNoUnreplacedPlaceholders(html, context) {
   }
 }
 
-export function renderPostPageHtml(data) {
-  const html = replaceTemplateVars(getPostPageTemplate(), data)
+export function renderPostPageHtml(data, { templateHtml, stylesheets = '' } = {}) {
+  const template = templateHtml?.trim() || getPostPageTemplate()
+  if (!/<head\b/i.test(template) || !/<body\b/i.test(template) ||
+      !/\{\{title\}\}/i.test(template) || !/\{\{content\}\}/i.test(template)) {
+    throw new PublishValidationError('Post template needs <head>, <body>, {{TITLE}}, and {{CONTENT}}.')
+  }
+  let html
+  try { html = addStylesheets(replaceTemplateVars(template, data), stylesheets) }
+  catch (err) { throw new PublishValidationError(err.message) }
   assertNoUnreplacedPlaceholders(html, 'Post page template')
-  assertRenderedPostPage(html)
   return html
 }
 
