@@ -14,6 +14,7 @@ import { saveDraft, loadDrafts, loadDraft, deleteDraft } from './lib/drafts'
 import { slugify } from './lib/slugify'
 import { parsePublishedHtml } from './lib/postSerializer'
 import { loadPostTemplate, persistPostTemplate } from './lib/postTemplate'
+import { loadCustomStylesheets, persistCustomStylesheets } from './lib/customStylesheets'
 import { fetchRepoFileText, listPostHtmlFiles } from './lib/github'
 import { publishPostAndIndex } from './lib/publishPipeline'
 import { deletePublishedPost } from './lib/deletePublishedPost'
@@ -81,6 +82,7 @@ export default function App() {
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [toasts, setToasts] = useState([])
   const [postTemplateHtml, setPostTemplateHtml] = useState(() => loadPostTemplate())
+  const [customStylesheets, setCustomStylesheets] = useState(() => loadCustomStylesheets())
   /** Snapshot of the last persisted draft (manual save, autosave, or open). */
   const lastSavedRef = useRef({
     id: null,
@@ -194,6 +196,7 @@ export default function App() {
     const handle = window.setTimeout(() => persistPostTemplate(postTemplateHtml), 450)
     return () => window.clearTimeout(handle)
   }, [postTemplateHtml])
+  useEffect(() => { persistCustomStylesheets(customStylesheets) }, [customStylesheets])
 
   useEffect(() => {
     if (listTab !== 'published') return undefined
@@ -423,6 +426,8 @@ export default function App() {
           excerpt,
           category,
           categoryClass: 'nb-bg-pink',
+          templateHtml: postTemplateHtml,
+          stylesheets: customStylesheets,
         })
         console.log('Publish result:', result)
         setIndexHomeBanner(result.indexHomeBanner)
@@ -483,6 +488,8 @@ export default function App() {
       content,
       excerpt,
       category,
+      postTemplateHtml,
+      customStylesheets,
       pushToast,
       refreshDrafts,
       handleNewDraft,
@@ -727,6 +734,8 @@ export default function App() {
             <PostTemplatePanel
               html={postTemplateHtml}
               onHtmlChange={setPostTemplateHtml}
+              stylesheets={customStylesheets}
+              onStylesheetsChange={setCustomStylesheets}
               previewContext={{ title, slug, excerpt, category, content }}
               onPreviewBlocked={() =>
                 pushToast('Allow pop-ups in your browser to preview the template output.')
