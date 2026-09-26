@@ -19,7 +19,7 @@ function normalizeDeleteSlug(slugInput) {
  * Delete a published post file and remove its card from blog/index.html.
  * @param {{ form: { token: string, owner: string, repo: string, branch?: string }, slug: string }} opts
  */
-export async function deletePublishedPost({ form, slug: slugInput }) {
+export async function deletePublishedPost({ form, slug: slugInput, path }) {
   let token = form.token.trim()
   let owner = form.owner.trim()
   let repo = form.repo.trim()
@@ -42,9 +42,9 @@ export async function deletePublishedPost({ form, slug: slugInput }) {
     throw new PublishValidationError('Add a slug before deleting a published post.')
   }
 
-  const postPath = postRepoPath(slug)
+  const postPath = path || postRepoPath(slug)
   const indexPath = BLOG_INDEX
-  const postFileLabel = `blog/posts/${slug}.html`
+  const postFileLabel = postPath
 
   const postSha = await getFileSha({ token, owner, repo, path: postPath, branch })
   if (!postSha) {
