@@ -115,7 +115,7 @@ export default function App() {
   )
 
   const refreshPublishedPostsFromRepo = useCallback(
-    async ({ showPanelLoading = true } = {}) => {
+    async ({ showPanelLoading = true, authoritative = false } = {}) => {
       const token = githubSettings.token?.trim()
       const owner = githubSettings.owner?.trim()
       const repo = githubSettings.repo?.trim()
@@ -139,7 +139,7 @@ export default function App() {
           branch: githubSettings.branch?.trim() || 'main',
         })
         const sorted = [...files].sort((a, b) => a.name.localeCompare(b.name))
-        setPublishedFiles((current) => mergeRepoPublishedWithLocal(current, sorted))
+        setPublishedFiles((current) => authoritative ? sorted : mergeRepoPublishedWithLocal(current, sorted))
         setRecentlyDeletedSlugs((prev) => pruneRecentlyDeletedSlugs(prev, sorted))
         return sorted
       } catch (err) {
@@ -158,7 +158,7 @@ export default function App() {
   )
 
   const loadPublishedList = useCallback(() => {
-    return refreshPublishedPostsFromRepo({ showPanelLoading: true })
+    return refreshPublishedPostsFromRepo({ showPanelLoading: true, authoritative: true })
   }, [refreshPublishedPostsFromRepo])
 
   const handleRefreshPublished = useCallback(async () => {
@@ -167,7 +167,7 @@ export default function App() {
     setPublishedError('')
     setPublishedErrorDetail('')
     try {
-      const posts = await refreshPublishedPostsFromRepo({ showPanelLoading: false })
+      const posts = await refreshPublishedPostsFromRepo({ showPanelLoading: false, authoritative: true })
       console.log('Fetched published posts:', posts)
       pushToast('Published list refreshed')
     } catch (err) {
