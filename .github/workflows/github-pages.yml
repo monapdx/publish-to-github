@@ -1,0 +1,60 @@
+# Build and deploy the app to GitHub Pages.
+# Repo → Settings → Pages: set Source to "GitHub Actions".
+#
+# Project site URL: https://<owner>.github.io/<repo>/
+# Special case: repo named <owner>.github.io (user pages) uses base "/".
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Compute Vite base path
+        id: base
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          if [ "$REPO" = "$OWNER.github.io" ]; then
+            echo "path=/" >> "$GITHUB_OUTPUT"
+            echo "Using base / (user/org GitHub Pages repo)"
+          else
+            echo "path=/$REPO/" >> "$GITHUB_OUTPUT"
+            echo "Using base /$REPO/ (project pages)"
+          fi
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_BASE: ${{ steps.base.outputs.path }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
