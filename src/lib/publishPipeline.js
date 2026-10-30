@@ -1,3 +1,4 @@
+import { publishImageAssets } from './imageAssets'
 import { BLOG_INDEX } from './blogPaths'
 import { fetchRepoFileText, getFileSha, upsertFile, validateGithubConnection } from './github'
 import { getFriendlyGithubError } from './githubFriendlyMessages'
@@ -52,10 +53,12 @@ export async function publishPostAndIndex({
 
   const postUrl = path.startsWith('blog/') ? path.slice('blog/'.length) : path
 
+  const publishedContent = await publishImageAssets({ content: safeContent, path, token, owner, repo, branch })
+
   const templateData = buildPublishTemplateData({
     title: safeTitle,
     slug,
-    content: safeContent,
+    content: publishedContent,
     excerpt,
     category,
     categoryClass: categoryClass || 'nb-bg-pink',

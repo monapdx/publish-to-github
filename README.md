@@ -115,7 +115,7 @@ New cards are inserted between these markers (newest first). Code view includes 
 | Code snippet | ![Insert snippet](assets/insert-snippet.png) |
 | Image | ![Insert image](assets/insert-image.png) |
 
-Tables support add/remove rows and columns. Images support URL or file upload (data URL in drafts), alt text, size, and alignment. Code snippets export as normal `<pre><code>` blocks.
+Tables support add/remove rows and columns. Images support URL or file upload, alt text, size, and alignment. Uploads stay local in drafts; publishing saves each image in its original format under `blog/assets/` and links to it from the post. Republishing an older post also moves its embedded images into asset files. Code snippets export as normal `<pre><code>` blocks.
 
 ### Post meta
 
