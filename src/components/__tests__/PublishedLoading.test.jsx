@@ -8,7 +8,16 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true
 it('loads a published post whose GitHub response omits inline content', async () => {
   localStorage.setItem('blog-editor-github-settings', JSON.stringify({ token: 'test', owner: 'owner', repo: 'repo', branch: 'main' }))
   const html = '<html><head><meta name="blog-editor:title" content="Selected title"></head><body><article class="blog-post"><h1>Selected title</h1><div class="post-content"><p>Selected published body</p></div></article></body></html>'
-  vi.stubGlobal('fetch', vi.fn(async (url, options) => ({ ok: true, status: 200, text: async () => html, json: async () => url.includes('selected.html') ? { sha: 'abc', size: 4544867, content: '', encoding: 'none' } : url.includes('blog/posts?') ? [] : [{ type: 'file', name: 'selected.html', path: 'blog/selected.html' }], headers: options.headers })))
+  vi.stubGlobal('fetch', vi.fn(async (url) => ({
+    ok: true, status: 200,
+    // A repeated raw request can return metadata; never treat this as HTML.
+    text: async () => JSON.stringify({ encoding: 'none', content: '', sha: 'abc' }),
+    json: async () => url.includes('/git/blobs/')
+      ? { encoding: 'base64', content: btoa(html), sha: 'abc' }
+      : url.includes('selected.html')
+        ? { sha: 'abc', size: 4544867, content: '', encoding: 'none' }
+        : url.includes('blog/posts?') ? [] : [{ type: 'file', name: 'selected.html', path: 'blog/selected.html' }],
+  })))
   const host = document.createElement('div')
   document.body.append(host)
   const root = createRoot(host)

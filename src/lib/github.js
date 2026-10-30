@@ -184,21 +184,23 @@ export async function fetchRepoFileText({ token, owner, repo, path, branch, enco
   if (Array.isArray(data)) {
     throw new Error('Expected a file path, not a directory')
   }
-  // GitHub omits inline content for files over 1 MB (encoding: 'none').
-  // Request raw bytes from the same authenticated endpoint instead of treating
-  // the empty metadata field as an empty post.
+  // Large files omit inline content. Fetch the immutable blob as base64 JSON
+  // from a distinct URL, avoiding cached contents metadata on raw requests.
   if (data.encoding === 'none') {
-    const rawRes = await fetch(url, {
-      headers: { ...headers(token), Accept: 'application/vnd.github.raw+json' },
-    })
-    await throwUnlessOk(rawRes)
-    if (encoding === 'base64') {
-      const bytes = new Uint8Array(await rawRes.arrayBuffer())
-      let binary = ''
-      for (const byte of bytes) binary += String.fromCharCode(byte)
-      return { sha: data.sha, text: btoa(binary) }
+    if (typeof data.sha !== 'string' || !data.sha) {
+      throw new Error('GitHub did not return a file SHA for this large file')
     }
-    return { sha: data.sha, text: await rawRes.text() }
+    const blobUrl = `${API}/repos/${owner}/${repo}/git/blobs/${encodeURIComponent(data.sha)}`
+    const blobRes = await fetch(blobUrl, { headers: headers(token) })
+    await throwUnlessOk(blobRes)
+    const blob = await blobRes.json()
+    if (blob.encoding !== 'base64' || typeof blob.content !== 'string') {
+      throw new Error('GitHub returned file metadata instead of file content. Please try again.')
+    }
+    return {
+      sha: data.sha,
+      text: encoding === 'base64' ? blob.content.replace(/\s/g, '') : base64ToUtf8(blob.content),
+    }
   }
   if (typeof data.content !== 'string') {
     throw new Error('File is too large or not available via the contents API')

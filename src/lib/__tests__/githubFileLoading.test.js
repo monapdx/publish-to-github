@@ -5,7 +5,7 @@ const options = {
   token: ' token ', owner: 'owner', repo: 'repo',
   path: 'blog/posts/a post.html', branch: 'feature/posts',
 }
-const url = 'https://api.github.com/repos/owner/repo/contents/blog/posts/a%20post.html?ref=feature%2Fposts'
+const blobUrl = 'https://api.github.com/repos/owner/repo/git/blobs/large'
 const metadata = (data) => ({ ok: true, status: 200, json: async () => data })
 
 afterEach(() => vi.unstubAllGlobals())
@@ -20,16 +20,16 @@ describe('fetchRepoFileText', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
-  it('loads raw content when GitHub omits content for a large post', async () => {
+  it('loads blob content when GitHub omits content for a large post', async () => {
     const html = '<h1>A published post</h1><p>Full body — café</p>'
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(metadata({ sha: 'large', size: 4544867, content: '', encoding: 'none' }))
-      .mockResolvedValueOnce({ ok: true, status: 200, text: async () => html })
+      .mockResolvedValueOnce(metadata({ encoding: 'base64', content: btoa(String.fromCharCode(...new TextEncoder().encode(html))) }))
     vi.stubGlobal('fetch', fetchMock)
     await expect(fetchRepoFileText(options)).resolves.toEqual({ sha: 'large', text: html })
     expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(fetchMock).toHaveBeenNthCalledWith(2, url, { headers: {
-      Accept: 'application/vnd.github.raw+json', Authorization: 'Bearer token',
+    expect(fetchMock).toHaveBeenNthCalledWith(2, blobUrl, { headers: {
+      Accept: 'application/vnd.github+json', Authorization: 'Bearer token',
       'X-GitHub-Api-Version': '2022-11-28',
     } })
   })
@@ -41,7 +41,7 @@ describe('fetchRepoFileText', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
-  it('propagates raw-fetch failures instead of returning an empty post', async () => {
+  it('propagates blob-fetch failures instead of returning an empty post', async () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(metadata({ sha: 'large', content: '', encoding: 'none' }))
       .mockResolvedValueOnce({ ok: false, status: 403, text: async () => 'Permission denied' }))
@@ -74,9 +74,17 @@ it('loads inline binary image data without decoding it as UTF-8', async () => {
   await expect(fetchRepoFileText({ ...options, encoding: 'base64' })).resolves.toEqual({ sha: 'image', text: 'AP+AAQ==' })
 })
 
-it('loads large binary image data through the raw fallback', async () => {
+it('loads large binary image data through the blob fallback', async () => {
   vi.stubGlobal('fetch', vi.fn()
     .mockResolvedValueOnce(metadata({ sha: 'image', encoding: 'none', content: '' }))
-    .mockResolvedValueOnce({ ok: true, arrayBuffer: async () => new Uint8Array([0, 255, 128, 1]).buffer }))
+    .mockResolvedValueOnce(metadata({ encoding: 'base64', content: 'AP+AAQ==' })))
   await expect(fetchRepoFileText({ ...options, encoding: 'base64' })).resolves.toEqual({ sha: 'image', text: 'AP+AAQ==' })
+})
+
+
+it('rejects metadata returned by the fallback instead of loading JSON as a post', async () => {
+  vi.stubGlobal('fetch', vi.fn()
+    .mockResolvedValueOnce(metadata({ sha: 'large', encoding: 'none', content: '' }))
+    .mockResolvedValueOnce(metadata({ sha: 'large', encoding: 'none', content: '', size: 4544867 })))
+  await expect(fetchRepoFileText(options)).rejects.toThrow('metadata instead of file content')
 })
