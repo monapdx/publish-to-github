@@ -77,8 +77,7 @@ export function ImageDialog({ open, onClose, onInsert }) {
       >
         <h2 id="image-dialog-title">Insert image</h2>
         <p className="dialog-hint">
-          Paste a URL or upload from your device. Uploaded images are embedded in the draft as data (no server
-          required).
+          Paste a URL or upload from your device. Uploaded images stay in your local draft until you publish, then upload to blog/assets/ as image files.
         </p>
         <form onSubmit={submit}>
           <div className="field">

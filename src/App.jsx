@@ -1,3 +1,4 @@
+import { loadPublishedImageAssets } from './lib/imageAssets'
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HeaderBar } from './components/HeaderBar'
 import { ToastStack } from './components/ToastStack'
@@ -370,8 +371,10 @@ export default function App() {
         } = parsePublishedHtml(text)
         const basename = path.split('/').pop() || 'post'
         const slugFromFile = basename.replace(/\.html$/i, '') || 'post'
-        const body =
-          parsedContent && parsedContent.trim() ? parsedContent : EMPTY_DOC
+        const body = await loadPublishedImageAssets({
+          content: parsedContent && parsedContent.trim() ? parsedContent : EMPTY_DOC,
+          path, token, owner, repo, branch,
+        })
         setPublishedSource({ path })
         setDraftId(null)
         setSlugManual(true)

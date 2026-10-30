@@ -167,11 +167,11 @@ export async function listPostHtmlFiles({ token, owner, repo, branch }) {
 }
 
 /**
- * Fetch and decode a text file from the repo.
- * @param {{ token: string, owner: string, repo: string, path: string, branch: string }} opts
+ * Fetch a repo file as UTF-8 text, or base64 for binary assets.
+ * @param {{ token: string, owner: string, repo: string, path: string, branch: string, encoding?: "utf-8"|"base64" }} opts
  * @returns {Promise<{ sha: string, text: string }>}
  */
-export async function fetchRepoFileText({ token, owner, repo, path, branch }) {
+export async function fetchRepoFileText({ token, owner, repo, path, branch, encoding = 'utf-8' }) {
   const q = new URLSearchParams({ ref: branch || 'main' })
   const url = `${API}/repos/${owner}/${repo}/contents/${encodeRepoPath(path)}?${q}`
   const res = await fetch(url, { headers: headers(token) })
@@ -184,15 +184,31 @@ export async function fetchRepoFileText({ token, owner, repo, path, branch }) {
   if (Array.isArray(data)) {
     throw new Error('Expected a file path, not a directory')
   }
+  // GitHub omits inline content for files over 1 MB (encoding: 'none').
+  // Request raw bytes from the same authenticated endpoint instead of treating
+  // the empty metadata field as an empty post.
+  if (data.encoding === 'none') {
+    const rawRes = await fetch(url, {
+      headers: { ...headers(token), Accept: 'application/vnd.github.raw+json' },
+    })
+    await throwUnlessOk(rawRes)
+    if (encoding === 'base64') {
+      const bytes = new Uint8Array(await rawRes.arrayBuffer())
+      let binary = ''
+      for (const byte of bytes) binary += String.fromCharCode(byte)
+      return { sha: data.sha, text: btoa(binary) }
+    }
+    return { sha: data.sha, text: await rawRes.text() }
+  }
   if (typeof data.content !== 'string') {
     throw new Error('File is too large or not available via the contents API')
   }
-  return { sha: data.sha, text: base64ToUtf8(data.content) }
+  return { sha: data.sha, text: encoding === 'base64' ? data.content.replace(/\s/g, '') : base64ToUtf8(data.content) }
 }
 
 /**
  * Create or update a text file in the repo.
- * @param {{ token: string, owner: string, repo: string, path: string, branch: string, content: string, message: string, sha?: string|null }} opts
+ * @param {{ token: string, owner: string, repo: string, path: string, branch: string, content: string, message: string, sha?: string|null, encoding?: "utf-8"|"base64" }} opts
  */
 export async function upsertFile({
   token,
@@ -203,10 +219,11 @@ export async function upsertFile({
   content,
   message,
   sha = null,
+  encoding = 'utf-8',
 }) {
   const body = {
     message,
-    content: utf8ToBase64(content),
+    content: encoding === 'base64' ? content : utf8ToBase64(content),
     branch,
   }
   if (sha) body.sha = sha
