@@ -28,7 +28,7 @@ body {
   background:
     radial-gradient(circle at 12% 16%, #00cfff55 0, #00cfff00 34%),
     radial-gradient(circle at 88% 12%, #ff3dbf55 0, #ff3dbf00 30%),
-    radial-gradient(circle at 80% 86%, #d3ff00aa 0, #d3ff0000 28%),
+    radial-gradient(circle at 80% 86%, #e69dfcaa 0, #e69dfc00 28%),
     var(--bg);
 }
 
@@ -197,7 +197,7 @@ body {
 }
 
 .post-meta__collapsible[open] .post-meta__collapsible-summary {
-  background: #d3ff00;
+  background: #e69dfc;
 }
 
 .field {
@@ -244,7 +244,7 @@ body {
   font-size: 0.78rem;
   border: 2px solid #111;
   padding: 0.05rem 0.35rem;
-  background: #d3ff00;
+  background: #e69dfc;
 }
 
 .editor-section {
@@ -316,7 +316,7 @@ body {
 }
 
 .btn:hover:not(:disabled) {
-  background: #d3ff00;
+  background: #e69dfc;
 }
 
 .btn.btn--sky:hover:not(:disabled) {
