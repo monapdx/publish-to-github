@@ -2,6 +2,9 @@ export function DraftList({
   listTab,
   onListTabChange,
   drafts,
+  draftsLoading = false,
+  draftsError = '',
+  onRetryDrafts,
   currentDraftId,
   onOpenDraft,
   onDeleteDraft,
@@ -50,7 +53,14 @@ export function DraftList({
               New
             </button>
           </div>
-          {drafts.length === 0 ? (
+          {draftsLoading ? (
+            <p className="draft-list__empty" role="status">Loading local drafts…</p>
+          ) : draftsError ? (
+            <div className="draft-list__empty" role="alert">
+              <p>{draftsError}</p>
+              <button type="button" className="btn btn--small" onClick={onRetryDrafts}>Retry</button>
+            </div>
+          ) : drafts.length === 0 ? (
             <p className="draft-list__empty">
               No drafts yet. Write a title and your post, then use <strong>Save draft</strong> in the top bar to keep a
               copy on this computer.
