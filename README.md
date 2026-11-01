@@ -135,8 +135,11 @@ Publishing always uses the **bundled** post page and card templates. Code view i
 
 ![Drafts sidebar](assets/sidebar-drafts.png)
 
-- Stored in **browser `localStorage`** on this computer only  
+- Stored in **IndexedDB** in this browser on this computer only  
 - **New**, open, delete, **Save draft**, and idle **autosave**  
+- Existing localStorage drafts migrate automatically on first use; the original data is removed only after migration commits successfully.
+- Drafts (including embedded images) are saved individually, avoiding the small localStorage limit and rewriting every post on each save.
+- Browser storage still has a device-dependent limit and is cleared when you clear site data. Keep backups of important unpublished work. Settings and templates continue to use localStorage.
 - Clear message if storage is full  
 
 ### Published (GitHub)

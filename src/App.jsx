@@ -62,7 +62,11 @@ export default function App() {
   const [draftId, setDraftId] = useState(null)
   const [updatedAt, setUpdatedAt] = useState('')
   const [githubSettings, setGithubSettings] = useState(() => loadGithubSettings())
-  const [drafts, setDrafts] = useState(() => loadDrafts())
+  const [drafts, setDrafts] = useState([])
+  const [draftsLoading, setDraftsLoading] = useState(true)
+  const [draftsError, setDraftsError] = useState('')
+  const documentEpochRef = useRef(0)
+  const savingDraftRef = useRef(false)
   const [listTab, setListTab] = useState('drafts')
   const [publishedFiles, setPublishedFiles] = useState([])
   const [recentlyDeletedSlugs, setRecentlyDeletedSlugs] = useState([])
@@ -107,8 +111,25 @@ export default function App() {
     [dismissToast],
   )
 
-  const refreshDrafts = useCallback(() => {
-    setDrafts(loadDrafts())
+  const refreshDrafts = useCallback(async () => {
+    try {
+      setDrafts(await loadDrafts())
+      setDraftsError('')
+    } catch (error) {
+      setDraftsError(`Could not load local drafts: ${error.message}`)
+    } finally {
+      setDraftsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    loadDrafts().then((rows) => {
+      if (active) { setDrafts(rows); setDraftsError('') }
+    }).catch((error) => {
+      if (active) setDraftsError(`Could not load local drafts: ${error.message}`)
+    }).finally(() => { if (active) setDraftsLoading(false) })
+    return () => { active = false }
   }, [])
 
   const githubReady = Boolean(
@@ -231,9 +252,11 @@ export default function App() {
     }
   }, [])
 
-  const handleSaveDraft = useCallback(() => {
-    setPublishedSource(null)
-    const row = saveDraft({
+  const handleSaveDraft = useCallback(async () => {
+    if (savingDraftRef.current) return
+    savingDraftRef.current = true
+    const epoch = documentEpochRef.current
+    const row = await saveDraft({
       id: draftId ?? undefined,
       title,
       slug,
@@ -241,18 +264,21 @@ export default function App() {
       excerpt,
       category,
     })
+    savingDraftRef.current = false
     if (!row.ok) {
       pushToast(
         row.reason === 'quota'
           ? 'Could not save: this browser’s storage is full. Free some space or shorten the post.'
-          : 'Could not save the draft locally. Check that storage is enabled for this site.',
+          : `Could not save the draft locally. ${row.message || 'Check that storage is enabled for this site.'}`,
       )
       return
     }
+    void refreshDrafts()
+    if (epoch !== documentEpochRef.current) return
+    setPublishedSource(null)
     setDraftId(row.id)
     setUpdatedAt(row.updatedAt)
     persistSnapshot(row.id, { title, slug, content, excerpt, category })
-    refreshDrafts()
     pushToast(
       row.isUpdate
         ? 'Changes to this draft saved locally.'
@@ -274,8 +300,11 @@ export default function App() {
     ) {
       return undefined
     }
-    const handle = window.setTimeout(() => {
-      const row = saveDraft({
+    const epoch = documentEpochRef.current
+    let cancelled = false
+    const handle = window.setTimeout(async () => {
+      if (epoch !== documentEpochRef.current) return
+      const row = await saveDraft({
         id: draftId,
         title,
         slug,
@@ -284,16 +313,17 @@ export default function App() {
         category,
       })
       if (!row.ok) {
-        if (row.reason === 'quota') {
-          pushToast('Autosave skipped: browser storage is full.')
-        }
+        pushToast(row.reason === 'quota'
+          ? 'Autosave failed: browser storage is full.'
+          : 'Autosave failed. Your latest edits have not been saved; try Save draft again.')
         return
       }
+      void refreshDrafts()
+      if (cancelled || epoch !== documentEpochRef.current) return
       persistSnapshot(row.id, { title, slug, content, excerpt, category })
       setUpdatedAt(row.updatedAt)
-      refreshDrafts()
     }, 2000)
-    return () => window.clearTimeout(handle)
+    return () => { cancelled = true; window.clearTimeout(handle) }
   }, [draftId, title, slug, content, excerpt, category, refreshDrafts, persistSnapshot, pushToast])
 
   useEffect(() => {
@@ -307,9 +337,14 @@ export default function App() {
   }, [handleSaveDraft])
 
   const handleOpenDraft = useCallback(
-    (id) => {
-      const d = loadDraft(id)
-      if (!d) return
+    async (id) => {
+      const epoch = ++documentEpochRef.current
+      let d
+      try { d = await loadDraft(id) } catch (error) {
+        pushToast(`Could not open draft: ${error.message}`)
+        return
+      }
+      if (!d || epoch !== documentEpochRef.current) return
       setPublishedSource(null)
       setDraftId(d.id)
       setTitle(d.title ?? '')
@@ -330,10 +365,11 @@ export default function App() {
         category: d.category ?? '',
       }
     },
-    [],
+    [pushToast],
   )
 
   const handleNewDraft = useCallback(() => {
+    documentEpochRef.current += 1
     setPublishedSource(null)
     setDraftId(null)
     setTitle('')
@@ -356,6 +392,7 @@ export default function App() {
 
   const handleOpenPublished = useCallback(
     async (path) => {
+      const epoch = ++documentEpochRef.current
       const token = githubSettings.token?.trim()
       const owner = githubSettings.owner?.trim()
       const repo = githubSettings.repo?.trim()
@@ -375,6 +412,7 @@ export default function App() {
           content: parsedContent && parsedContent.trim() ? parsedContent : EMPTY_DOC,
           path, token, owner, repo, branch,
         })
+        if (epoch !== documentEpochRef.current) return
         setPublishedSource({ path })
         setDraftId(null)
         setSlugManual(true)
@@ -402,12 +440,16 @@ export default function App() {
   )
 
   const handleDeleteDraft = useCallback(
-    (id) => {
-      deleteDraft(id)
-      if (draftId === id) handleNewDraft()
-      refreshDrafts()
+    async (id) => {
+      const epoch = draftId === id ? ++documentEpochRef.current : documentEpochRef.current
+      try { await deleteDraft(id) } catch (error) {
+        pushToast(`Could not delete draft: ${error.message}`)
+        return
+      }
+      if (draftId === id && epoch === documentEpochRef.current) handleNewDraft()
+      void refreshDrafts()
     },
-    [draftId, handleNewDraft, refreshDrafts],
+    [draftId, handleNewDraft, refreshDrafts, pushToast],
   )
 
   const editorDocumentKey = draftId ?? publishedSource?.path ?? 'new'
@@ -417,6 +459,7 @@ export default function App() {
       setPublishBusy(true)
       try {
         const publishedDraftId = draftId
+        const publishedEpoch = documentEpochRef.current
         const s = slug.trim() || slugify(title) || 'post'
         const sourceDir = publishedSource?.path?.startsWith('blog/posts/') ? 'blog/posts' : 'blog'
         const path = publishedSource ? `${sourceDir}/${s}.html` : postRepoPath(s)
@@ -468,9 +511,15 @@ export default function App() {
           )
         }
         if (publishedDraftId) {
-          deleteDraft(publishedDraftId)
-          refreshDrafts()
-          handleNewDraft()
+          try {
+            const stillOpen = publishedEpoch === documentEpochRef.current
+            const cleanupEpoch = stillOpen ? ++documentEpochRef.current : null
+            await deleteDraft(publishedDraftId)
+            await refreshDrafts()
+            if (cleanupEpoch === documentEpochRef.current) handleNewDraft()
+          } catch {
+            pushToast('Published successfully, but the local draft could not be removed. It has been kept.')
+          }
         }
         pushToast('Published post. GitHub Pages may take a minute to redeploy.')
 
@@ -629,6 +678,9 @@ export default function App() {
               listTab={listTab}
               onListTabChange={setListTab}
               drafts={drafts}
+              draftsLoading={draftsLoading}
+              draftsError={draftsError}
+              onRetryDrafts={refreshDrafts}
               currentDraftId={draftId}
               onOpenDraft={handleOpenDraft}
               onDeleteDraft={handleDeleteDraft}
