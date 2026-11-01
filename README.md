@@ -1,246 +1,92 @@
-# Pub2Hub — Neo-Brutalist Blog Editor for GitHub
+# Pub2Hub
+### A blog editor for GitHub Pages
 
-**Write posts. Click publish. Done.**  
-No CMS. No backend. No subscriptions.
+Write a post, add pictures, and publish your own blog. No coding needed.
 
-👉 Live demo: https://monapdx.github.io/publish-to-github/  
-👉 Get it on Gumroad: [Get It Now](https://ashpdx.gumroad.com/l/lvsnmfb)  
-📄 HTML version: [README.html](README.html) (open in a browser)
+**[Open the editor →](https://monapdx.github.io/publish-to-github/)**
 
-<a href="https://open-launch.com/projects/pub2hub" target="_blank" rel="noopener">
-  <img src="https://open-launch.com/api/badge/10d58d3f-928c-4dd5-9c3d-6255f8ca9d4c/featured-light.svg" alt="Featured on Open-Launch" width="200" height="50" />
-</a>
+![Pub2Hub editor](assets/neo-butalist-blog-editor-github.png)
 
-![Pub2Hub editor overview](assets/neo-butalist-blog-editor-github.png)
+Pub2Hub is where you write. GitHub stores your posts, and GitHub Pages makes them into a public website.
 
-A browser-based editor that publishes **plain HTML** straight into **your** GitHub repository. Posts live as files you own; GitHub Pages serves the `blog/` folder as your site.
+## 1. Make a home for your blog
 
----
+You’ll need a [GitHub account](https://github.com/signup).
 
-## Quick overview
+1. Open [Create a new repository](https://github.com/new). A **repository** is simply a project folder on GitHub.
+2. Give it a name, such as **my-blog**.
+3. Choose **Public** so you can use GitHub Pages with a free account.
+4. Turn on **Add a README** so the repository starts with a file.
+5. Click **Create repository**.
 
-| Step | What happens |
-|------|----------------|
-| 1 | Connect GitHub (username, repo, branch, token) — saved in **this browser only** |
-| 2 | Write in Visual or Code mode; **Save draft** keeps a local backup |
-| 3 | **Publish** creates/updates `blog/posts/{slug}.html` and updates `blog/index.html` |
-| 4 | First publish bootstraps `blog/`, styles, and a GitHub Actions workflow |
-| 5 | Enable **Settings → Pages → GitHub Actions** once, then visit your site URL |
+Use a new repository for your blog. You don’t need to copy or fork Pub2Hub.
 
-The **Published** sidebar updates immediately after publish or delete (optimistic UI). It reads from the **GitHub repo API**, not the live Pages URL, so deployment lag does not hide new posts.
+## 2. Create your publishing key
 
----
+GitHub calls this a **personal access token**. It lets the editor save posts to your repository.
 
-## Download and run on Windows
+1. Open [Fine-grained personal access tokens](https://github.com/settings/personal-access-tokens) and click **Generate new token**.
+2. Name it **Pub2Hub**, choose an expiration date, and select your account as the **Resource owner**.
+3. Under **Repository access**, choose **Only select repositories** and select your blog.
+4. Under **Repository permissions**, give **Contents** and **Workflows** **Read and write** access. Leave **Metadata** at its automatic read-only setting.
+5. Click **Generate token**, then copy it. GitHub only shows it once.
 
-You need **Node.js** (LTS from [nodejs.org](https://nodejs.org/)) once per computer.
+Keep this key private, like a password. Paste it into the editor, never into a post.
 
-1. Download this repo (ZIP or clone).
-2. Extract to a folder you can find (Desktop, Documents, etc.).
-3. Double-click **`install.bat`** — wait until it finishes.
-4. Double-click **`start.bat`** — keep the window open; the browser opens the editor (usually `http://localhost:5173/`).
+[GitHub’s token guide](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
 
-![Windows command prompt when running install/start](assets/command-prompt-windows.png)
+## 3. Connect the editor
 
-On first launch, the **welcome** screen asks for GitHub connection details. Use **Help** in the top bar anytime for token steps, blog layout, and troubleshooting.
+[Open Pub2Hub](https://monapdx.github.io/publish-to-github/) and fill in the welcome screen:
 
-To stop: close the browser tab and the `start.bat` window (or Ctrl+C in that window).
+| Field | What to enter |
+| --- | --- |
+| GitHub username | Your account name, such as `octocat` |
+| Repository name | Just the name, such as `my-blog` |
+| Branch | Leave as `main` for a new repository |
+| GitHub personal access token | The key you just copied |
 
----
+Click **Save and open editor**.
 
-## Who this is for
+## 4. Publish your first post
 
-- You want **files in a repo**, not a hosted CMS  
-- You use (or want) **GitHub** and **GitHub Pages**  
-- You like a **visual editor** but want **raw HTML** when needed  
-- You do not want another subscription or platform lock-in  
+1. Enter a title and write in **Visual** mode. Use the toolbar to format text and add images.
+2. Click **Save draft** if you want to keep working later.
+3. When you’re ready to share, click **Publish**, then **Publish to GitHub**.
 
-## What this is not
+Pub2Hub creates your blog’s pages, design, and publishing instructions automatically.
 
-- Not a hosted blogging platform  
-- Not WordPress-in-a-box  
-- Not a general static-site generator — layout is **fixed** under `blog/`  
+**Finish this one-time setup on GitHub:**
 
----
+1. Open your **blog repository** and go to **Settings → Pages**.
+2. Under **Build and deployment → Source**, choose **GitHub Actions**.
+3. Open the **Actions** tab, select **Deploy blog to GitHub Pages**, and click **Run workflow**. Leave the branch as `main` and confirm.
+4. Wait for it to finish successfully, then return to **Settings → Pages** to find your website link.
 
-## Blog layout (fixed)
+For a repository called `my-blog`, the address is usually:
 
-Every publish uses the same structure:
+`https://YOUR-USERNAME.github.io/my-blog/`
 
-```text
-blog/
-  index.html          ← homepage + post cards
-  style.css
-  .nojekyll
-  posts/
-    my-post.html      ← one file per post
-.github/workflows/deploy-blog-pages.yml   ← added on first publish
-```
+Share that address with readers. Future posts update the site automatically; allow a few minutes for changes to appear.
 
-Bundled templates (in the app, not uploaded as a folder):
+## Keep writing
 
-- `templates/post-page-template.html` — full post pages  
-- `templates/post-card-template.html` — cards on the homepage  
-- `templates/index.html` — starter homepage design  
+- **New post:** Click **New** in the Drafts sidebar.
+- **Continue a draft:** Open it under **Drafts**. After your first save, changes autosave while you work.
+- **Edit a published post:** Open **Published**, select the post, make changes, and publish again. Keep the same slug (the post’s filename) to update its existing address.
+- **Change your connection:** Click **Publish** to edit your GitHub details.
+- **More options:** Expand **Slug, excerpt & category** below the title. **Code** mode is optional.
 
-Homepage listing uses marker comments (invisible on the public site):
+**Drafts stay in this browser on this computer.** Clearing site data removes them. Published posts are saved on GitHub and can be opened again through the editor.
 
-```html
-<!-- BLOG_POSTS_START -->
-<!-- BLOG_POSTS_END -->
-```
+## Need help?
 
-New cards are inserted between these markers (newest first). Code view includes tools to check markers and edit homepage HTML.
+Click **Help** inside the editor.
 
----
+- **Site not showing?** Check **Settings → Pages** uses **GitHub Actions**, then look for a failed run in the **Actions** tab.
+- **Publishing denied?** Check the repository name, token expiration, and the two permissions in step 2.
+- **Post saved but site unchanged?** Wait a few minutes, then refresh your website.
 
-## Editor
+Prefer running the editor on Windows? Download this repository using **Code → Download ZIP**, extract it, install [Node.js LTS](https://nodejs.org/), then double-click `install.bat` once and `start.bat` whenever you want to write.
 
-### Visual and Code modes
-
-![Visual and Code editors](assets/visual-code-editors.gif)
-
-- **Visual** — [TipTap](https://tiptap.dev/) v3: headings, lists, quotes, links, images, tables, code blocks, undo/redo. **Ctrl/Cmd+S** saves the current draft.  
-- **Code** — raw HTML for the post body, plus an optional **post template** panel (advanced sections collapsed by default).
-
-### Toolbar
-
-![Editor toolbar](assets/toolbar.png)
-
-| Feature | Screenshot |
-|---------|------------|
-| Text formatting | ![Text formatting](assets/text-format-zoomed.gif) |
-| Insert table | ![Insert table](assets/insert-table.png) |
-| Upload media | ![Upload media](assets/upload-media.png) |
-| Code snippet | ![Insert snippet](assets/insert-snippet.png) |
-| Image | ![Insert image](assets/insert-image.png) |
-
-Tables support add/remove rows and columns. Images support URL or file upload, alt text, size, and alignment. Uploads stay local in drafts; publishing saves each image in its original format under `blog/assets/` and links to it from the post. Republishing an older post also moves its embedded images into asset files. Code snippets export as normal `<pre><code>` blocks.
-
-### Post meta
-
-Under the title: collapsible **slug, excerpt, and category**. Excerpt and category can appear on homepage cards and in optional `blog-editor:*` meta tags for round-trip editing.
-
-### Code view — templates (advanced)
-
-![Post template and homepage tools in Code mode](assets/post-template-editor.png)
-
-Publishing always uses the **bundled** post page and card templates. Code view is for preview, optional local template tweaks, loading `blog/index.html` from GitHub, and editing homepage/listing HTML in collapsed **Advanced** sections. See in-app **Help** for placeholders and markers.
-
----
-
-## Sidebar: Drafts and Published
-
-### Drafts (local)
-
-![Drafts sidebar](assets/sidebar-drafts.png)
-
-- Stored in **IndexedDB** in this browser on this computer only  
-- **New**, open, delete, **Save draft**, and idle **autosave**  
-- Existing localStorage drafts migrate automatically on first use; the original data is removed only after migration commits successfully.
-- Drafts (including embedded images) are saved individually, avoiding the small localStorage limit and rewriting every post on each save.
-- Browser storage still has a device-dependent limit and is cleared when you clear site data. Keep backups of important unpublished work. Settings and templates continue to use localStorage.
-- Clear message if storage is full  
-
-### Published (GitHub)
-
-![Published sidebar](assets/published-sidebar.png)
-
-- Lists `.html` files in `blog/posts/` via the **GitHub Contents API**  
-- **Refresh** reloads from the repo (button shows “Refreshing…”, toast on success or error)  
-- Open a post to edit and publish again (same file path)  
-- **Delete Published Post** removes the file and homepage card (with confirmation); sidebar updates immediately  
-- After publish, the new/updated post appears at the top **without** waiting for Pages deployment  
-
-Opening a published file **sanitizes** body HTML (DOMPurify) before loading into the editor.
-
----
-
-## Publishing
-
-![Publish connection dialog is opened from the header Publish button](assets/Pub2Hub.png)
-
-1. Click **Publish** in the header.  
-2. Confirm username, repository, branch, and personal access token.  
-3. Click **Publish to GitHub**.
-
-The app will:
-
-- Bootstrap `blog/` and the Pages workflow on first publish  
-- Write `blog/posts/{slug}.html` from the bundled post template  
-- Fetch `blog/index.html`, insert or update the post card between markers, and save  
-- Show a clear error if the post saved but the index could not be updated  
-
-**One-time:** In the repo on GitHub, open **Settings → Pages** and set **Build and deployment** source to **GitHub Actions**, then run **Deploy blog to GitHub Pages** under the Actions tab.
-
-Connection settings save to `localStorage` after a successful publish or **Save connection settings**.
-
----
-
-## Help
-
-**Help** in the header opens a short, scannable guide:
-
-- **Quick start** (always visible)  
-- Collapsible sections: blog structure, token setup, editing published posts, common problems, advanced details  
-
-No account data is sent to a third-party server — only GitHub’s API, using your token from the browser.
-
----
-
-## Mobile
-
-![Mobile layout](assets/mobile.png)
-
-Usable on smaller screens; writing and publishing are easiest on desktop.
-
----
-
-## Developers
-
-```bash
-npm install
-npm run dev
-```
-
-![Dev server in terminal](assets/npm-run-dev.png)
-
-| Script | Purpose |
-|--------|---------|
-| `npm run dev` | Local dev server (Vite) |
-| `npm run build` | Production build |
-| `npm run preview` | Preview production build |
-| `npm run lint` | ESLint |
-| `npm test` | Vitest (blog index, publish helpers, sanitization, GitHub messages) |
-
-CI runs lint, tests, and build on push/PR (`.github/workflows/ci.yml`).
-
-### GitHub token
-
-**Fine-grained (recommended)** on the target repo:
-
-- **Contents** — Read and write  
-- **Metadata** — Read-only  
-- **Workflows** — Read and write (first publish adds the deploy workflow)  
-
-**Classic** alternative: `repo` scope (`ghp_…`).
-
-Use the repo **owner** (your username or org name), not a personal username for an org-owned repo.
-
----
-
-## Stack
-
-- React 19, Vite 8, ESLint 9, Vitest  
-- TipTap 3 (StarterKit, Link, Underline, Image, Placeholder, Table)  
-- DOMPurify when opening published HTML  
-- GitHub REST API for file create/update/delete and directory listing  
-
----
-
-## Why this exists
-
-- No database  
-- No dashboard lock-in  
-- No subscription — you pay for the tool once if you buy on Gumroad  
-- **Write → Save locally → Publish to GitHub → Files you control**
+[Get Pub2Hub on Gumroad](https://ashpdx.gumroad.com/l/lvsnmfb)
